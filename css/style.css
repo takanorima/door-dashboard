@@ -485,3 +485,46 @@ body.face-on .foot { padding-right: 140px; }
   padding: 12px; background: #111; border: 1px solid var(--line); border-radius: 10px;
   font-size: 16px; line-height: 1.5; color: var(--text-dim); white-space: pre-wrap;
 }
+
+/* 試し表示（?ui=next）：時間帯ごとの小見出し */
+.task-group {
+  list-style: none;
+  font-size: clamp(14px, min(2vw, 2.6vh), 24px);
+  font-weight: 700;
+  color: var(--c);
+  padding: .4vh .2vw 0;
+  border-bottom: 1px solid var(--line);
+}
+.task-group:not(:first-child) { margin-top: .8vh; }
+.col.fit-5 .task-list .task-group { grid-column: 1 / -1; }
+/* 試し表示：カードをやめて区切り線の1列リストにする（2列に割らない） */
+.ui-next .task-list { gap: 0; }
+.ui-next .task {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 10px;
+  padding-left: .4vw; padding-right: .4vw;
+}
+.ui-next .task:last-child { border-bottom-color: transparent; }
+.ui-next .task.pressed { background: var(--panel-2); }
+.ui-next .check { border-color: var(--c); }
+.ui-next .task.done .check { background: var(--c); border-color: var(--c); }
+.ui-next .task-title { font-feature-settings: "palt"; }
+.ui-next .task-group { border-bottom: 0; padding-bottom: 0; display: flex; justify-content: space-between; gap: 8px; }
+.group-count { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+/* 終わった区切り：テーマカラーの帯で「できた！」 */
+.task-group.complete {
+  background: var(--c); color: #000; border-radius: 10px;
+  padding: .5vh .8vw; cursor: pointer;
+}
+.task-group.complete .group-count { color: #000; font-weight: 900; }
+.ui-next .col.fit-4 .task-group { font-size: clamp(13px, min(1.7vw, 2.2vh), 20px); }
+.ui-next .col.fit-4 .task-group:not(:first-child) { margin-top: .4vh; }
+.ui-next .col.fit-5 .task { padding-top: 0; padding-bottom: 0; }
+.ui-next .col.fit-5 .task-list { display: flex; }
+.ui-next .col.fit-5 .task-title { font-size: clamp(12px, min(1.8vw, 2.3vh), 22px); line-height: 1.1; }
+.ui-next .col.fit-5 .check { width: clamp(20px, 2.8vh, 30px); height: clamp(20px, 2.8vh, 30px); border-width: 3px; font-size: 1.8vh; }
+.ui-next .col.fit-5 .task { min-height: 0; gap: .6vw; }
+.ui-next .col.fit-5 .task-group { font-size: clamp(12px, min(1.5vw, 2vh), 18px); padding-top: 0; }
+.ui-next .col.fit-5 .progress { margin: .3vh 0 .4vh; height: 6px; }

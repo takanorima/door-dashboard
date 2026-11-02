@@ -39,6 +39,9 @@
   // デバッグ用：?now=2026-11-02T07:30 で時刻を固定オフセット
   const timeOffset = params.get('now') ? new Date(params.get('now')).getTime() - Date.now() : 0;
   const now = () => new Date(Date.now() + timeOffset);
+  // 試し表示：?ui=next を付けたときだけ新しい見た目にする（本番の画面を変えずに実機で確かめるため）
+  const UI_NEXT = params.get('ui') === 'next';
+  if (UI_NEXT) document.documentElement.classList.add('ui-next');
 
   const DOW = ['日', '月', '火', '水', '木', '金', '土'];
   const $ = (id) => document.getElementById(id);
@@ -51,6 +54,9 @@
   let dataLoadedAt = null;
   let dataError = false;
   let weather = null;
+  // 試し表示：区切り（おきたら等）ごとの完了。終わった直後は少し見せてから1行にたたむ
+  const groupJustDone = {}; // `${member}|${category}` → 完了した時刻
+  const groupOpen = new Set(); // たたんだ区切りを開いているもの
   let lastRenderKey = '';
   let focusMember = null;     // ズーム中の子の id（null = 全員）
   let focusTimer = null;
@@ -212,7 +218,13 @@
   const doneKey = (memberId, taskId) => `${memberId}:${taskId}`;
 
   function renderColumn(member, t) {
-    const list = activeTasks(t, member.id);
+    let list = activeTasks(t, member.id);
+    // 試し表示：時間帯（おきたら／でかけるまえ／かえったら／ねるまで）ごとにまとめ、2つ以上あれば小見出しを付ける
+    const catOrder = Object.keys(data.categories ?? {});
+    const catIdx = (r) => catOrder.indexOf(r.category); // 単発TODO（category なし）は -1 で先頭
+    const activeCats = new Set(data.routines.filter((r) => occurrence(r, t)).map((r) => r.category));
+    const grouped = UI_NEXT && activeCats.size > 1;
+    if (grouped) list = [...list].sort((a, b) => catIdx(a.r) - catIdx(b.r));
     const col = el('section', 'col');
     col.dataset.member = member.id;
     col.style.setProperty('--c', member.color || 'var(--info)');
@@ -249,12 +261,31 @@
     }
 
     const ul = el('ul', 'task-list');
-    let done = 0;
     const cache = {};
+    let lastCat;
+    let collapsed = false;
+    const isDoneOf = ({ r, occ }) => !!(cache[occ.occDate] ??= store.get(occ.occDate))[doneKey(member.id, r.id)];
+    const done = list.filter(isDoneOf).length; // たたんだ区切りの分も数える
     for (const { r, occ } of list) {
+      if (grouped && r.category && r.category !== lastCat) {
+        const c = data.categories[r.category];
+        const items = list.filter((x) => x.r.category === r.category);
+        const n = items.filter(isDoneOf).length;
+        const key = `${member.id}|${r.category}`;
+        const complete = n === items.length;
+        // 終わった区切りは1行にたたむ（完了した直後の数秒と、タップで開いたときは中身を見せる）
+        const fresh = Date.now() - (groupJustDone[key] ?? 0) < 2800;
+        collapsed = complete && !fresh && !groupOpen.has(key);
+        const head = el('li', 'task-group' + (complete ? ' complete' : ''));
+        head.dataset.group = key;
+        head.append(el('span', 'group-label', `${c?.icon ?? ''} ${c?.label ?? r.category}`.trim()),
+          el('span', 'group-count', complete ? '✓ できた！' : `${n}/${items.length}`));
+        ul.append(head);
+      }
+      lastCat = r.category;
+      if (grouped && collapsed) continue;
       const map = (cache[occ.occDate] ??= store.get(occ.occDate));
       const isDone = !!map[doneKey(member.id, r.id)];
-      if (isDone) done++;
 
       const li = el('li', 'task' + (isDone ? ' done' : ''));
       li.dataset.member = member.id;
@@ -557,6 +588,13 @@
     if (ev.target.closest('.col-head')) {
       return setFocus(focusMember === col.dataset.member ? null : col.dataset.member);
     }
+    // たたんだ区切りをタップ → 開く／閉じる
+    const gh = ev.target.closest('.task-group.complete');
+    if (gh) {
+      const key = gh.dataset.group;
+      if (groupOpen.has(key)) groupOpen.delete(key); else groupOpen.add(key);
+      return render(true);
+    }
     const li = ev.target.closest('.task');
     if (!li) return;
     const { member, id, occ } = li.dataset;
@@ -568,11 +606,16 @@
     li.classList.toggle('done', !!m[k]);
     try {
       const finished = m[k] ? completedList(member, now()) : null;
+      const group = m[k] && !finished ? completedGroup(member, id, now()) : null;
+      if (group) groupJustDone[`${member}|${group.id}`] = Date.now();
       if (focusMember) armFocusTimer();
       render(true);
       if (finished) {
         celebrate(member);
         maybeNotifyComplete(member, finished);
+      } else if (group) {
+        celebrate(member, `🎉 ${group.label} できた！`);
+        setTimeout(() => render(true), 3000); // 見せ終わったら1行にたたむ
       }
     } catch (e) {
       showError('check', e);
@@ -598,6 +641,17 @@
       await new Promise((r) => setTimeout(r, 5000 * (i + 1)));
     }
     return false;
+  }
+
+  // 試し表示：いま付けたチェックで、その区切り（おきたら等）が全部終わったか。ほかの区切りも同時に出ているときだけ
+  function completedGroup(memberId, routineId, t) {
+    if (!UI_NEXT) return null;
+    const list = activeTasks(t, memberId);
+    const cat = list.find(({ r }) => r.id === routineId)?.r.category;
+    if (!cat || new Set(list.map(({ r }) => r.category)).size < 2) return null;
+    const items = list.filter(({ r }) => r.category === cat);
+    const ok = items.every(({ r, occ }) => !!store.get(occ.occDate)[doneKey(memberId, r.id)]);
+    return ok ? { id: cat, label: data.categories?.[cat]?.label ?? cat } : null;
   }
 
   function completedList(memberId, t) {
@@ -626,7 +680,7 @@
 
   // ---------- 全部できた！エフェクト ----------
   const CONFETTI_COLORS = ['#fde047', '#f472b6', '#22d3ee', '#a3e635', '#fb923c', '#ffffff'];
-  function celebrate(memberId) {
+  function celebrate(memberId, title = '🎉 ぜんぶできた！') {
     const m = (data.members ?? []).find((x) => x.id === memberId);
     const col = document.querySelector(`.col[data-member="${memberId}"]`);
     const rect = col?.getBoundingClientRect() ?? { left: 0, top: 0, width: innerWidth, height: innerHeight };
@@ -658,7 +712,7 @@
     }
 
     const msg = el('div', 'celebrate-msg');
-    msg.append(el('div', 'celebrate-big', '🎉 ぜんぶできた！'), el('div', 'celebrate-name', `${m?.icon ?? ''} ${m?.name ?? ''}`));
+    msg.append(el('div', 'celebrate-big', title), el('div', 'celebrate-name', `${m?.icon ?? ''} ${m?.name ?? ''}`));
     layer.append(msg);
     document.body.append(layer);
     col?.classList.add('just-done');
