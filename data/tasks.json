@@ -240,7 +240,7 @@
     },
     {
       "id": "home_redfile",
-      "title": "連絡袋（赤ファイル）を出す",
+      "title": "赤ファイルを出す",
       "category": "evening",
       "start_hour": 15,
       "end_hour": 23,
@@ -248,7 +248,7 @@
       "members": ["kid3"],
       "tags": ["学校"],
       "titles": {
-        "kid3": "れんらくぶくろ（赤ファイル）を出す"
+        "kid3": "赤ファイルを出す"
       }
     },
     {
