@@ -55,6 +55,39 @@
   },
   "routines": [
     {
+      "id": "chore_sort_laundry",
+      "title": "洗濯物の振り分け",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [0, 1, 2, 3, 4, 5, 6],
+      "members": ["kid1"],
+      "tags": ["お手伝い"]
+    },
+    {
+      "id": "chore_dishes",
+      "title": "食器洗い",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [0, 1, 2, 3, 4, 5, 6],
+      "members": ["kid2"],
+      "tags": ["お手伝い"]
+    },
+    {
+      "id": "chore_fold_futon",
+      "title": "布団をたたむ",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [0, 1, 2, 3, 4, 5, 6],
+      "members": ["kid3"],
+      "tags": ["お手伝い"],
+      "titles": {
+        "kid3": "ふとんをたたむ"
+      }
+    },
+    {
       "id": "morning_bento",
       "title": "弁当・水筒",
       "category": "morning",
@@ -374,6 +407,39 @@
       "tags": ["学校", "準備"],
       "titles": {
         "kid3": "明日の時間わりをそろえる"
+      }
+    },
+    {
+      "id": "chore_washer",
+      "title": "洗濯機を回す",
+      "category": "night",
+      "start_hour": 19,
+      "end_hour": 2,
+      "days": [0, 1, 2, 3, 4, 5, 6],
+      "members": ["kid1"],
+      "tags": ["お手伝い"]
+    },
+    {
+      "id": "chore_gather_trash",
+      "title": "各部屋のゴミをまとめる",
+      "category": "night",
+      "start_hour": 19,
+      "end_hour": 2,
+      "days": [0, 3],
+      "members": ["kid1"],
+      "tags": ["お手伝い"]
+    },
+    {
+      "id": "chore_lay_futon",
+      "title": "布団を敷く",
+      "category": "night",
+      "start_hour": 19,
+      "end_hour": 2,
+      "days": [0, 1, 2, 3, 4, 5, 6],
+      "members": ["kid3"],
+      "tags": ["お手伝い"],
+      "titles": {
+        "kid3": "ふとんをしく"
       }
     }
   ],
