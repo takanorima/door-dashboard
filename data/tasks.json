@@ -303,17 +303,6 @@
       "prev_evening": false,
       "tags": ["こぱん"],
       "source": "Googleカレンダー（こぱん送迎・木曜利用）"
-    },
-    {
-      "id": "todo_2026-11-03_1",
-      "title": "テスト",
-      "date": "2026-11-03",
-      "members": ["kid3"],
-      "start_hour": 5,
-      "end_hour": 23,
-      "prev_evening": true,
-      "tags": ["予定"],
-      "source": "#1"
     }
   ]
 }
