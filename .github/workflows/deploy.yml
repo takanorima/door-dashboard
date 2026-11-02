@@ -1,0 +1,59 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate tasks.json
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          d = json.load(open('data/tasks.json', encoding='utf-8'))
+          ids = set()
+          for r in d['routines']:
+              for k in ('id', 'title', 'category', 'start_hour', 'end_hour'):
+                  assert k in r, f"{r.get('id')}: missing {k}"
+              assert r['id'] not in ids, f"duplicate id {r['id']}"
+              ids.add(r['id'])
+              assert 0 <= r['start_hour'] <= 23 and 0 <= r['end_hour'] <= 24, f"{r['id']}: hour range"
+              assert r['start_hour'] != r['end_hour'], f"{r['id']}: start == end"
+              assert all(0 <= x <= 6 for x in r.get('days', [])), f"{r['id']}: days must be 0-6"
+          import datetime
+          for t in d.get('todos', []):
+              for k in ('id', 'title', 'date'):
+                  assert k in t, f"todo {t.get('id')}: missing {k}"
+              assert t['id'] not in ids, f"duplicate id {t['id']}"
+              ids.add(t['id'])
+              datetime.date.fromisoformat(t['date'])
+          print(f"OK: {len(d['routines'])} routines, {len(d.get('todos', []))} todos")
+          EOF
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

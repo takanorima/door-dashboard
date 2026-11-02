@@ -1,0 +1,308 @@
+{
+  "version": 3,
+  "members": [
+    {
+      "id": "kid1",
+      "name": "茶和子",
+      "icon": "🍵",
+      "color": "#a3e635",
+      "note": "高1"
+    },
+    {
+      "id": "kid2",
+      "name": "花乃子",
+      "icon": "🌼",
+      "color": "#fde047",
+      "note": "小6"
+    },
+    {
+      "id": "kid3",
+      "name": "寛成",
+      "icon": "🥫",
+      "color": "#fb923c",
+      "note": "小3"
+    }
+  ],
+  "categories": {
+    "morning": {
+      "label": "朝の準備",
+      "icon": "☀️"
+    },
+    "evening": {
+      "label": "おかえり",
+      "icon": "🏠"
+    },
+    "night": {
+      "label": "夜・明日の準備",
+      "icon": "🌙"
+    }
+  },
+  "tag_styles": {
+    "必須": "danger",
+    "ゴミ": "warn",
+    "習慣": "info",
+    "学校": "accent",
+    "準備": "muted",
+    "お手伝い": "warn",
+    "予定": "accent",
+    "習い事": "info",
+    "こぱん": "accent",
+    "空手": "warn"
+  },
+  "routines": [
+    {
+      "id": "morning_bottle",
+      "title": "水筒",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["all"],
+      "tags": ["必須"]
+    },
+    {
+      "id": "morning_bento",
+      "title": "お弁当",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid1"],
+      "tags": ["必須"]
+    },
+    {
+      "id": "morning_hat",
+      "title": "帽子・名札",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid3"],
+      "tags": ["必須"]
+    },
+    {
+      "id": "morning_trash",
+      "title": "可燃ゴミ出し",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 9,
+      "days": [1, 4],
+      "members": ["kid1"],
+      "tags": ["ゴミ", "お手伝い"]
+    },
+    {
+      "id": "morning_recycle",
+      "title": "資源ゴミ（びん・缶・ペット）",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 9,
+      "days": [3],
+      "members": ["kid2"],
+      "tags": ["ゴミ", "お手伝い"]
+    },
+    {
+      "id": "home_shoes",
+      "title": "靴をそろえる",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [0, 1, 2, 3, 4, 5, 6],
+      "members": ["kid3"],
+      "tags": ["習慣"]
+    },
+    {
+      "id": "home_wash",
+      "title": "手洗い・うがい",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [0, 1, 2, 3, 4, 5, 6],
+      "members": ["all"],
+      "tags": ["必須"]
+    },
+    {
+      "id": "home_hang",
+      "title": "帽子・上着をかける",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [0, 1, 2, 3, 4, 5, 6],
+      "members": ["kid3"],
+      "tags": ["習慣"]
+    },
+    {
+      "id": "home_uniform",
+      "title": "制服をハンガーにかける",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid1"],
+      "tags": ["習慣"]
+    },
+    {
+      "id": "home_bento",
+      "title": "弁当箱を流しへ",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid1"],
+      "tags": ["習慣"]
+    },
+    {
+      "id": "home_bottle",
+      "title": "水筒を洗う",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["all"],
+      "tags": ["習慣"]
+    },
+    {
+      "id": "home_laundry",
+      "title": "体操服を洗濯カゴへ",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid1"],
+      "tags": ["習慣"]
+    },
+    {
+      "id": "home_randoseru",
+      "title": "ランドセルを定位置へ",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid2"],
+      "tags": ["習慣"]
+    },
+    {
+      "id": "home_letter",
+      "title": "連絡帳・プリントを出す",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid2"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "home_redfile",
+      "title": "連絡袋（赤ファイル）を出す",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid3"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "home_handout",
+      "title": "プリント・提出物を渡す",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid1"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "home_homework",
+      "title": "宿題をする",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid2"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "home_ondoku",
+      "title": "宿題・音読カード",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid3"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "home_fri_wash",
+      "title": "給食袋・上履き・体操服を洗濯へ",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [5],
+      "members": ["kid2", "kid3"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "home_pool",
+      "title": "プールの洗濯物を出す",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [2],
+      "members": ["kid3"],
+      "tags": ["習い事"]
+    },
+    {
+      "id": "home_kopan",
+      "title": "こぱんの白ファイルを出す",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [3, 5],
+      "members": ["kid3"],
+      "tags": ["こぱん"]
+    },
+    {
+      "id": "home_karate",
+      "title": "空手の練習着・水筒を出す",
+      "category": "evening",
+      "start_hour": 10,
+      "end_hour": 23,
+      "days": [6],
+      "members": ["kid2", "kid3"],
+      "tags": ["空手"]
+    },
+    {
+      "id": "night_bag",
+      "title": "明日の時間割をそろえる",
+      "category": "night",
+      "start_hour": 19,
+      "end_hour": 2,
+      "days": [0, 1, 2, 3, 4],
+      "members": ["kid2", "kid3"],
+      "tags": ["学校", "準備"]
+    }
+  ],
+  "todos": [
+    {
+      "id": "todo_kopan_2026-11-05",
+      "title": "こぱんの白ファイルを出す",
+      "date": "2026-11-05",
+      "members": ["kid3"],
+      "start_hour": 15,
+      "end_hour": 23,
+      "prev_evening": false,
+      "tags": ["こぱん"],
+      "source": "Googleカレンダー（こぱん送迎・木曜利用）"
+    },
+    {
+      "id": "todo_kopan_2026-11-12",
+      "title": "こぱんの白ファイルを出す",
+      "date": "2026-11-12",
+      "members": ["kid3"],
+      "start_hour": 15,
+      "end_hour": 23,
+      "prev_evening": false,
+      "tags": ["こぱん"],
+      "source": "Googleカレンダー（こぱん送迎・木曜利用）"
+    }
+  ]
+}

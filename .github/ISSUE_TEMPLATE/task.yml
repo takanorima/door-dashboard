@@ -1,0 +1,81 @@
+name: タスクを追加・削除
+description: 玄関ダッシュボードにTODOやルーティンを追加します
+title: "タスク"
+labels: ["task"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 種類
+      options:
+        - 単発TODO（日付指定）
+        - 毎週のルーティン
+        - 削除
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: what
+    attributes:
+      label: やること
+      description: 削除のときは、消したい項目のタイトル（の一部）
+      placeholder: 体操服
+    validations:
+      required: true
+
+  - type: input
+    id: date
+    attributes:
+      label: 日付（単発TODOのみ）
+      description: 11/5、明日、あさって、金曜、来週の月曜 など。空欄なら「明日」
+      placeholder: 明日
+
+  - type: checkboxes
+    id: members
+    attributes:
+      label: 担当
+      description: 何も選ばなければ全員。※名前を変えたらここも書き換える
+      options:
+        - label: 全員
+        - label: 茶和子
+        - label: 花乃子
+        - label: 寛成
+
+  - type: dropdown
+    id: slot
+    attributes:
+      label: 表示する時間帯
+      options:
+        - 一日中
+        - 朝
+        - 夕方
+        - 夜
+      default: 0
+
+  - type: checkboxes
+    id: option
+    attributes:
+      label: オプション（単発TODOのみ）
+      description: ふだんは前日17時から「明日：〇〇」と表示します
+      options:
+        - label: 当日だけ表示する（前日には出さない）
+
+  - type: checkboxes
+    id: days
+    attributes:
+      label: 曜日（毎週のルーティンのみ）
+      options:
+        - label: 月
+        - label: 火
+        - label: 水
+        - label: 木
+        - label: 金
+        - label: 土
+        - label: 日
+
+  - type: input
+    id: tags
+    attributes:
+      label: タグ（任意）
+      description: カンマ区切り。例：学校, 必須

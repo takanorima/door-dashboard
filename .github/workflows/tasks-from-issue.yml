@@ -1,0 +1,75 @@
+name: Tasks from Issue
+
+# Issue を作ると data/tasks.json に反映 → デプロイ → Issue に結果をコメントして閉じる
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write   # tasks.json をコミット
+  issues: write     # 結果コメント・クローズ
+  actions: write    # deploy.yml を起動
+
+concurrency:
+  group: tasks-json   # 同時に複数Issueが来ても順番に処理
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    # 公開リポジトリなので、持ち主（と招待した共同編集者）のIssueだけ処理する
+    if: contains(fromJSON('["OWNER","COLLABORATOR","MEMBER"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Parse issue and update tasks.json
+        id: parse
+        env:
+          # 本文はシェルに直接展開せず、環境変数経由で渡す（インジェクション対策）
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_CREATED_AT: ${{ github.event.issue.created_at }}
+        run: python3 scripts/issue_task.py
+
+      - name: Commit and push
+        if: steps.parse.outputs.result == 'added' || steps.parse.outputs.result == 'deleted'
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/tasks.json
+          git commit -m "tasks: update from #${ISSUE_NUMBER}"
+          git push
+
+      # GITHUB_TOKEN による push では deploy.yml が自動起動しないため、明示的に起動する
+      - name: Trigger deploy
+        if: steps.parse.outputs.result == 'added' || steps.parse.outputs.result == 'deleted'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --ref main
+
+      - name: Report and close
+        if: steps.parse.outputs.result == 'added' || steps.parse.outputs.result == 'deleted'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MSG: ${{ steps.parse.outputs.message }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          printf '%s\n\n数分後にタブレットへ反映されます（最大10分）。' "$MSG" > /tmp/body.md
+          gh issue comment "$NUM" --body-file /tmp/body.md
+          gh issue close "$NUM" --reason completed
+
+      - name: Report error
+        if: steps.parse.outputs.result == 'error'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MSG: ${{ steps.parse.outputs.message }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          printf '%s\n\n内容を直して、新しいIssueを作り直してください。' "$MSG" > /tmp/body.md
+          gh issue comment "$NUM" --body-file /tmp/body.md
+          gh issue close "$NUM" --reason "not planned"

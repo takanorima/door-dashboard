@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <title>Door Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="shift" class="shift">
+    <header class="top">
+      <div class="clock-block">
+        <div id="clock" class="clock">--:--</div>
+        <div id="date" class="date">----</div>
+      </div>
+      <div id="weather" class="weather" aria-live="polite">
+        <div class="weather-main">
+          <span id="wx-icon" class="wx-icon">…</span>
+          <span id="wx-temp" class="wx-temp">--°</span>
+        </div>
+        <div id="wx-sub" class="wx-sub">天気を取得中</div>
+      </div>
+    </header>
+
+    <div id="alerts" class="alerts"></div>
+
+    <div class="now-title-row">
+      <h2 id="now-title">いまやること</h2>
+    </div>
+
+    <!-- 子どもごとの列（JSで members から生成） -->
+    <main id="columns" class="columns"></main>
+
+    <section class="next" id="next-panel" hidden>
+      <span class="next-label">このあと</span>
+      <ul id="next-list" class="next-list"></ul>
+    </section>
+
+    <footer class="foot">
+      <span id="status-data">データ: --</span>
+      <span id="status-device"></span>
+    </footer>
+  </div>
+
+  <!-- 顔スキャン中の小窓（カメラ使用中であることを必ず見せる） -->
+  <div id="face-scan" class="face-scan" hidden>
+    <video id="face-video" autoplay muted playsinline></video>
+    <div id="face-scan-msg">👀 顔を見せてね</div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <!-- 設定（時計を2秒長押しで開く：大人用） -->
+  <div id="settings" class="modal" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2>設定</h2>
+        <button id="settings-close" class="btn">閉じる</button>
+      </div>
+      <label class="row toggle">
+        <input type="checkbox" id="face-enabled">
+        <span>顔認識で子どもの列をズーム</span>
+      </label>
+      <p class="note">顔の特徴データ（数値）はこのタブレットの中だけに保存されます。写真は保存せず、外部にも送信しません。</p>
+      <div id="enroll-list" class="enroll-list"></div>
+      <div class="enroll-stage" id="enroll-stage" hidden>
+        <video id="enroll-video" autoplay muted playsinline></video>
+        <div id="enroll-msg" class="enroll-msg"></div>
+      </div>
+      <div class="row">
+        <button id="face-test" class="btn">認識テスト</button>
+        <button id="face-clear-all" class="btn danger">顔データを全部消す</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="face-btn" class="face-btn" aria-label="顔で切り替え" title="顔で切り替え" hidden>👤</button>
+  <button id="screen-off" class="screen-off" aria-label="画面オフ" title="画面オフ">⏻</button>
+
+  <script src="js/face.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
