@@ -51,6 +51,7 @@
   let dataLoadedAt = null;
   let dataError = false;
   let weather = null;
+  let lastTouch = 0; // 最後に画面を触った時刻
   let lastRenderKey = '';
   let focusMember = null;     // ズーム中の子の id（null = 全員）
   let focusTimer = null;
@@ -249,12 +250,20 @@
     }
 
     const ul = el('ul', 'task-list');
-    let done = 0;
     const cache = {};
-    for (const { r, occ } of list) {
-      const map = (cache[occ.occDate] ??= store.get(occ.occDate));
-      const isDone = !!map[doneKey(member.id, r.id)];
-      if (isDone) done++;
+    const isDoneOf = ({ r, occ }) => !!(cache[occ.occDate] ??= store.get(occ.occDate))[doneKey(member.id, r.id)];
+    const done = list.filter(isDoneOf).length;
+    // 時間帯が重なったとき（19〜23時の おかえり と 夜）は、前の時間帯のチェック済みを隠して今のぶんを見やすくする。
+    // 全部終わっているときは隠さない（打ち消し線のまま並べる）。
+    // 触っている最中に消すと項目がずれてタップを外すので、最後に触ってから1分たってから隠す
+    const idle = Date.now() - lastTouch > 60e3;
+    const order = Object.keys(data.categories ?? {});
+    const latest = Math.max(...list.map(({ r }) => order.indexOf(r.category)));
+    const hideDone = (x) => idle && done < list.length && isDoneOf(x) && order.indexOf(x.r.category) < latest;
+    for (const x of list) {
+      const { r, occ } = x;
+      const isDone = isDoneOf(x);
+      if (hideDone(x)) continue;
 
       const li = el('li', 'task' + (isDone ? ' done' : ''));
       li.dataset.member = member.id;
@@ -282,7 +291,7 @@
    *  fit-2 … さらに文字と余白を小さく
    *  fit-3 … もう一段小さく
    *  fit-4 … 名前・外出予定の行を詰める
-   *  fit-5 … やることを2列に並べる
+   *  fit-5 … 1列のまま、文字とチェックをもう一段小さく
    */
   function autoFit() {
     document.querySelectorAll('.col').forEach((col) => {
@@ -872,6 +881,13 @@
     if (!frameStalled && Date.now() - frameAskedAt > 3000 && document.visibilityState === 'visible' && screenOn) {
       frameStalled = true;
       diag('フレームが3秒来ない（JSは動いている）');
+      // 触らずに見ているだけでも時計が止まるので、画面が確実に点いているときは自動で点け直す
+      if (Fully.call('getScreenOn') === true && Date.now() - lastRecover > 5 * 60e3) {
+        diag('自動で画面OFF→ON（定期監視）');
+        lastRecover = Date.now();
+        Fully.screenOff();
+        setTimeout(() => Fully.call('turnScreenOn'), 1200);
+      }
     }
   }
 
@@ -905,7 +921,6 @@
 
   // ---------- 新しい版の自動読み込み ----------
   // version.json の build が変わったら、URL に ?b= を付けて読み直す（URL が変わるのでキャッシュを通らない）
-  let lastTouch = 0;
   document.addEventListener('pointerdown', () => { lastTouch = Date.now(); }, true);
   async function checkUpdate() {
     if (BUILD === 'dev') return;
