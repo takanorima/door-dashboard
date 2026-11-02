@@ -171,7 +171,7 @@
     },
     {
       "id": "home_bento",
-      "title": "弁当箱を出す",
+      "title": "弁当箱・水筒を出す",
       "category": "evening",
       "start_hour": 15,
       "end_hour": 23,
@@ -186,7 +186,7 @@
       "start_hour": 15,
       "end_hour": 23,
       "days": [1, 2, 3, 4, 5],
-      "members": ["all"],
+      "members": ["kid2", "kid3"],
       "tags": ["習慣"],
       "titles": {
         "kid3": "すいとうをあらう"
