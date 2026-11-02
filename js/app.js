@@ -808,11 +808,21 @@
   // ---------- 設定（時計の長押し） ----------
   let pressTimer = null;
   const clockEl = document.querySelector('.clock-block');
-  const cancelPress = () => clearTimeout(pressTimer);
-  clockEl.addEventListener('pointerdown', () => {
-    pressTimer = setTimeout(openSettings, CONFIG.longPressMs);
+  let pressAt = null;
+  const cancelPress = () => { clearTimeout(pressTimer); pressAt = null; };
+  // Android は指を置いたままにすると長押しジェスチャーとして pointercancel を出すので、
+  // それでは取り消さない。止めるのは「指を離した」「指が動いた」ときだけ
+  clockEl.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+  clockEl.addEventListener('pointerdown', (e) => {
+    pressAt = { x: e.clientX, y: e.clientY };
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(() => { pressAt = null; openSettings(); }, CONFIG.longPressMs);
   });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach((e) => clockEl.addEventListener(e, cancelPress));
+  clockEl.addEventListener('pointermove', (e) => {
+    if (pressAt && Math.hypot(e.clientX - pressAt.x, e.clientY - pressAt.y) > 30) cancelPress();
+  });
+  clockEl.addEventListener('pointerup', cancelPress);
+  clockEl.addEventListener('touchend', cancelPress);
   // 長押しで WebView のメニューや選択状態に入らないよう、ページ全体で止める
   document.addEventListener('contextmenu', (e) => e.preventDefault());
 
