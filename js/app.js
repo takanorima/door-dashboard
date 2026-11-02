@@ -491,7 +491,27 @@
     }
   }
 
+  // ---------- エラー表示（実機で原因を追えるよう、画面下に出す） ----------
+  function showError(where, e) {
+    const t = new Date();
+    const msg = `⚠️ ${where}: ${e?.message ?? e} (${pad(t.getHours())}:${pad(t.getMinutes())})`;
+    console.error('[DD]', where, e);
+    const box = $('status-error');
+    if (box) box.textContent = msg;
+  }
+  window.addEventListener('error', (ev) => showError('error', ev.error ?? ev.message));
+  window.addEventListener('unhandledrejection', (ev) => showError('promise', ev.reason));
+
   // ---------- 操作 ----------
+  // 触れた瞬間に枠を光らせる（タップがページに届いているかが目で分かる）
+  $('columns').addEventListener('pointerdown', (ev) => {
+    const li = ev.target.closest('.task');
+    if (li) li.classList.add('pressed');
+  });
+  ['pointerup', 'pointercancel'].forEach((type) => $('columns').addEventListener(type, () => {
+    setTimeout(() => document.querySelectorAll('.task.pressed').forEach((x) => x.classList.remove('pressed')), 150);
+  }));
+
   $('columns').addEventListener('click', (ev) => {
     const col = ev.target.closest('.col');
     if (!col) return;
@@ -507,12 +527,18 @@
     const k = doneKey(member, id);
     if (m[k]) delete m[k]; else m[k] = Date.now();
     store.set(occ, m);
-    const finished = m[k] ? completedList(member, now()) : null;
-    if (focusMember) armFocusTimer();
-    render(true);
-    if (finished) {
-      celebrate(member);
-      maybeNotifyComplete(member, finished);
+    // 先にその行だけ見た目を切り替える（描き直しが失敗・遅延しても反応が見える）
+    li.classList.toggle('done', !!m[k]);
+    try {
+      const finished = m[k] ? completedList(member, now()) : null;
+      if (focusMember) armFocusTimer();
+      render(true);
+      if (finished) {
+        celebrate(member);
+        maybeNotifyComplete(member, finished);
+      }
+    } catch (e) {
+      showError('check', e);
     }
   });
 

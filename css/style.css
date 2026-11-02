@@ -177,6 +177,7 @@ body.dim .shift { filter: brightness(0.45); }
   transition: background .2s, border-color .2s, opacity .2s;
 }
 .task:active { transform: scale(0.98); }
+.task.pressed { border-color: var(--c); }
 .check {
   flex: none;
   width: clamp(36px, 5vw, 56px);
@@ -476,3 +477,5 @@ body.face-on .foot { padding-right: 140px; }
 .col.fit-5 .task-list { display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: .5vh .5vw; }
 .col.fit-5 .task { gap: .5vw; padding-left: .6vw; padding-right: .6vw; }
 .col.fit-5 .task-title { font-size: clamp(13px, min(1.6vw, 2.5vh), 22px); }
+
+.status-error { color: var(--danger); font-weight: 700; }
