@@ -225,7 +225,6 @@
     const ul = el('ul', 'task-list');
     let done = 0;
     const cache = {};
-    const items = [];
     for (const { r, occ } of list) {
       const map = (cache[occ.occDate] ??= store.get(occ.occDate));
       const isDone = !!map[doneKey(member.id, r.id)];
@@ -238,21 +237,19 @@
       li.append(el('div', 'check', '✓'));
 
       const body = el('div', 'task-body');
-      body.append(el('div', 'task-title', (occ.prefix ?? '') + r.title));
+      // titles.<memberId> があればその子向けの表記（寛成は小2までの漢字）
+      body.append(el('div', 'task-title', (occ.prefix ?? '') + (r.titles?.[member.id] ?? r.title)));
       const meta = el('div', 'task-meta');
       const minsLeft = Math.round((occ.endsAt - t) / 60000);
       meta.append(el('span', 'deadline' + (!isDone && minsLeft <= CONFIG.deadlineSoonMin ? ' soon' : ''),
         minsLeft <= 60 ? `あと${minsLeft}分` : `〜${pad(occ.endsAt.getHours())}:00`));
       for (const tag of r.tags ?? []) {
-        meta.append(el('span', 'tag ' + (data.tag_styles?.[tag] ?? 'muted'), tag));
+        meta.append(el('span', 'tag ' + (data.tag_styles?.[tag] ?? 'muted'), member.tag_labels?.[tag] ?? tag));
       }
       body.append(meta);
       li.append(body);
-      items.push(li);
+      ul.append(li);
     }
-    // 未完了を上に
-    items.sort((a, b) => a.classList.contains('done') - b.classList.contains('done'))
-      .forEach((li) => ul.append(li));
     col.append(ul);
 
     prog.textContent = `${done}/${list.length}`;

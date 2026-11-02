@@ -34,6 +34,17 @@ TIME_SLOTS = {
 }
 
 
+# 学年別漢字配当表（小1・小2）。members の kanji_grade: 2 の子には、これ以外の漢字を使うと注意を返す
+KANJI_UPTO_G2 = set(
+    "一右雨円王音下火花貝学気九休玉金空月犬見五口校左三山子四糸字耳七車手十出女小上森人水正生青夕石赤千"
+    "川先早草足村大男竹中虫町天田土二日入年白八百文木本名目立力林六"
+    "引羽雲園遠何科夏家歌画回会海絵外角楽活間丸岩顔汽記帰弓牛魚京強教近兄形計元言原戸古午後語工公広交光"
+    "考行高黄合谷国黒今才細作算止市矢姉思紙寺自時室社弱首秋週春書少場色食心新親図数西声星晴切雪船線前組"
+    "走多太体台地池知茶昼長鳥朝直通弟店点電刀冬当東答頭同道読内南肉馬売買麦半番父風分聞米歩母方北毎妹万"
+    "明鳴毛門夜野友用曜来里理話"
+)
+
+
 class InputError(Exception):
     pass
 
@@ -195,6 +206,17 @@ def resolve_members(d: dict, names: list[str]) -> list[str]:
     return list(dict.fromkeys(ids))
 
 
+def kanji_note(d, members, title) -> str:
+    """kanji_grade: 2 の子が担当に入っていて、小3以上の漢字があれば注意文を返す"""
+    ids = {m["id"] for m in d.get("members", [])} if "all" in members else set(members)
+    kids = [m for m in d.get("members", []) if m["id"] in ids and m.get("kanji_grade") == 2]
+    hard = "".join(dict.fromkeys(c for c in title if "\u4e00" <= c <= "\u9fff" and c not in KANJI_UPTO_G2))
+    if not kids or not hard:
+        return ""
+    who = "・".join(m.get("name", m["id"]) for m in kids)
+    return f"\n📝 {who}には むずかしい漢字があります（{'・'.join(hard)}）。ひらがなにするなら、消して入れ直してください。"
+
+
 def add_todo(d, issue_no, title, when: date, members, slot="一日中", prev_evening=True, tags=None):
     if not title:
         raise InputError("やることが空です")
@@ -214,7 +236,8 @@ def add_todo(d, issue_no, title, when: date, members, slot="一日中", prev_eve
     }
     d["todos"].append(todo)
     extra = "（前日17時から表示）" if prev_evening else ""
-    return f"✅ 追加しました：{fmt_date(when)} {names_of(d, members)}「{title}」 {s}〜{e}時{extra}"
+    return (f"✅ 追加しました：{fmt_date(when)} {names_of(d, members)}「{title}」 {s}〜{e}時{extra}"
+            + kanji_note(d, members, title))
 
 
 def add_routine(d, issue_no, title, days, members, slot, tags=None, category=None):
@@ -236,7 +259,8 @@ def add_routine(d, issue_no, title, days, members, slot, tags=None, category=Non
         "source": f"#{issue_no}",
     })
     dow = "".join("日月火水木金土"[x] for x in days)
-    return f"✅ ルーティンを追加しました：毎週{dow} {names_of(d, members)}「{title}」 {s}〜{e}時"
+    return (f"✅ ルーティンを追加しました：毎週{dow} {names_of(d, members)}「{title}」 {s}〜{e}時"
+            + kanji_note(d, members, title))
 
 
 def delete_items(d, query):

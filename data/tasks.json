@@ -20,7 +20,16 @@
       "name": "寛成",
       "icon": "🥫",
       "color": "#5a7ff0",
-      "note": "小3"
+      "note": "小3",
+      "kanji_grade": 2,
+      "tag_labels": {
+        "必須": "かならず",
+        "習慣": "しゅうかん",
+        "準備": "じゅんび",
+        "予定": "よてい",
+        "習い事": "ならいごと",
+        "お手伝い": "お手つだい"
+      }
     }
   ],
   "categories": {
@@ -58,7 +67,10 @@
       "end_hour": 10,
       "days": [1, 2, 3, 4, 5],
       "members": ["all"],
-      "tags": ["必須"]
+      "tags": ["必須"],
+      "titles": {
+        "kid3": "すいとう"
+      }
     },
     {
       "id": "morning_bento",
@@ -78,7 +90,10 @@
       "end_hour": 10,
       "days": [1, 2, 3, 4, 5],
       "members": ["kid3"],
-      "tags": ["必須"]
+      "tags": ["必須"],
+      "titles": {
+        "kid3": "ぼうし・名ふだ"
+      }
     },
     {
       "id": "morning_trash",
@@ -108,7 +123,10 @@
       "end_hour": 23,
       "days": [0, 1, 2, 3, 4, 5, 6],
       "members": ["kid3"],
-      "tags": ["習慣"]
+      "tags": ["習慣"],
+      "titles": {
+        "kid3": "くつをそろえる"
+      }
     },
     {
       "id": "home_wash",
@@ -118,7 +136,10 @@
       "end_hour": 23,
       "days": [0, 1, 2, 3, 4, 5, 6],
       "members": ["all"],
-      "tags": ["必須"]
+      "tags": ["必須"],
+      "titles": {
+        "kid3": "手あらい・うがい"
+      }
     },
     {
       "id": "home_hang",
@@ -128,7 +149,10 @@
       "end_hour": 23,
       "days": [0, 1, 2, 3, 4, 5, 6],
       "members": ["kid3"],
-      "tags": ["習慣"]
+      "tags": ["習慣"],
+      "titles": {
+        "kid3": "ぼうし・上ぎをかける"
+      }
     },
     {
       "id": "home_uniform",
@@ -158,7 +182,10 @@
       "end_hour": 23,
       "days": [1, 2, 3, 4, 5],
       "members": ["all"],
-      "tags": ["習慣"]
+      "tags": ["習慣"],
+      "titles": {
+        "kid3": "すいとうをあらう"
+      }
     },
     {
       "id": "home_laundry",
@@ -198,7 +225,10 @@
       "end_hour": 23,
       "days": [1, 2, 3, 4, 5],
       "members": ["kid3"],
-      "tags": ["学校"]
+      "tags": ["学校"],
+      "titles": {
+        "kid3": "れんらくぶくろ（赤ファイル）を出す"
+      }
     },
     {
       "id": "home_handout",
@@ -228,7 +258,10 @@
       "end_hour": 23,
       "days": [1, 2, 3, 4, 5],
       "members": ["kid3"],
-      "tags": ["学校"]
+      "tags": ["学校"],
+      "titles": {
+        "kid3": "しゅくだい・音読カード"
+      }
     },
     {
       "id": "home_fri_wash",
@@ -238,7 +271,10 @@
       "end_hour": 23,
       "days": [5],
       "members": ["kid2", "kid3"],
-      "tags": ["学校"]
+      "tags": ["学校"],
+      "titles": {
+        "kid3": "きゅうしょくぶくろ・上ばき・たいそうふくをせんたくへ"
+      }
     },
     {
       "id": "home_pool",
@@ -248,7 +284,10 @@
       "end_hour": 23,
       "days": [2],
       "members": ["kid3"],
-      "tags": ["習い事"]
+      "tags": ["習い事"],
+      "titles": {
+        "kid3": "プールのせんたくものを出す"
+      }
     },
     {
       "id": "home_kopan",
@@ -268,7 +307,10 @@
       "end_hour": 23,
       "days": [6],
       "members": ["kid2", "kid3"],
-      "tags": ["空手"]
+      "tags": ["空手"],
+      "titles": {
+        "kid3": "空手のれんしゅうぎ・すいとうを出す"
+      }
     },
     {
       "id": "night_bag",
@@ -278,7 +320,10 @@
       "end_hour": 2,
       "days": [0, 1, 2, 3, 4],
       "members": ["kid2", "kid3"],
-      "tags": ["学校", "準備"]
+      "tags": ["学校", "準備"],
+      "titles": {
+        "kid3": "明日の時間わりをそろえる"
+      }
     }
   ],
   "todos": [
@@ -303,17 +348,6 @@
       "prev_evening": false,
       "tags": ["こぱん"],
       "source": "Googleカレンダー（こぱん送迎・木曜利用）"
-    },
-    {
-      "id": "todo_2026-11-04_3",
-      "title": "TODOテスト",
-      "date": "2026-11-04",
-      "members": ["kid2"],
-      "start_hour": 5,
-      "end_hour": 23,
-      "prev_evening": true,
-      "tags": ["予定"],
-      "source": "#3"
     }
   ]
 }
