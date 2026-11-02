@@ -99,7 +99,7 @@
     },
     {
       "id": "morning_redfile",
-      "title": "赤ファイル・宿題・音読カード",
+      "title": "赤ファイル・宿題",
       "category": "morning",
       "start_hour": 5,
       "end_hour": 10,
@@ -107,7 +107,7 @@
       "members": ["kid3"],
       "tags": ["学校"],
       "titles": {
-        "kid3": "赤ファイル・しゅくだい・音読カード"
+        "kid3": "赤ファイル・しゅくだい"
       }
     },
     {
@@ -344,20 +344,10 @@
       "start_hour": 15,
       "end_hour": 23,
       "days": [1, 2, 3, 4, 5],
-      "members": ["kid2"],
-      "tags": ["学校"]
-    },
-    {
-      "id": "home_ondoku",
-      "title": "宿題・音読カード",
-      "category": "evening",
-      "start_hour": 15,
-      "end_hour": 23,
-      "days": [1, 2, 3, 4, 5],
-      "members": ["kid3"],
+      "members": ["kid2", "kid3"],
       "tags": ["学校"],
       "titles": {
-        "kid3": "しゅくだい・音読カード"
+        "kid3": "しゅくだいをする"
       }
     },
     {
