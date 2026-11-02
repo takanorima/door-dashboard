@@ -8,6 +8,8 @@
 
   // ---------- 設定（URLパラメータで上書き可） ----------
   const params = new URLSearchParams(location.search);
+  const VERSION = '11/02-c'; // 画面右下に出す。タブレットが新しい版を読んだかの確認用
+
   const CONFIG = {
     // 天気（Open-Meteo / APIキー不要）。既定は厚木市付近
     lat: parseFloat(params.get('lat') ?? '35.4428'),
@@ -388,6 +390,7 @@
       const b = Fully.battery();
       if (b != null) parts.push(`🔋${b}%${Fully.plugged() ? '⚡' : ''}`);
     }
+    parts.push(`v${VERSION}`);
     $('status-device').textContent = parts.join(' ');
     $('status-data').textContent = dataLoadedAt
       ? `データ更新 ${pad(dataLoadedAt.getHours())}:${pad(dataLoadedAt.getMinutes())}`
@@ -700,7 +703,8 @@
     pressTimer = setTimeout(openSettings, CONFIG.longPressMs);
   });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach((e) => clockEl.addEventListener(e, cancelPress));
-  clockEl.addEventListener('contextmenu', (e) => e.preventDefault());
+  // 長押しで WebView のメニューや選択状態に入らないよう、ページ全体で止める
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
 
   function applyFaceUI() {
     const on = faceEnabled() && window.FaceID && FaceID.supported;
