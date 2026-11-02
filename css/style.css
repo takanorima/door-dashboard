@@ -528,3 +528,5 @@ body.face-on .foot { padding-right: 140px; }
 .ui-next .col.fit-5 .task { min-height: 0; gap: .6vw; }
 .ui-next .col.fit-5 .task-group { font-size: clamp(12px, min(1.5vw, 2vh), 18px); padding-top: 0; }
 .ui-next .col.fit-5 .progress { margin: .3vh 0 .4vh; height: 6px; }
+.ui-next .col.fit-5 .task-group:not(:first-child) { margin-top: .2vh; }
+.ui-next .col.fit-5 .col-outings { margin-bottom: .1vh; }

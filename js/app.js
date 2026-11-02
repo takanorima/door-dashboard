@@ -54,6 +54,7 @@
   let dataLoadedAt = null;
   let dataError = false;
   let weather = null;
+  let lastTouch = 0; // 最後に画面を触った時刻
   // 試し表示：区切り（おきたら等）ごとの完了。終わった直後は少し見せてから1行にたたむ
   const groupJustDone = {}; // `${member}|${category}` → 完了した時刻
   const groupOpen = new Set(); // たたんだ区切りを開いているもの
@@ -160,9 +161,30 @@
     return null;
   }
 
+  /**
+   * 積み残し：時間帯が終わっても、categories[].carry_until 時までは「やっていないもの」だけ出し続ける
+   * （おきたら → でかけるまえ の間、かえったら → ねるまで の間）。
+   */
+  function carryOccurrence(r, t, memberId) {
+    const until = data.categories?.[r.category]?.carry_until;
+    const h = t.getHours();
+    if (until == null || r.start_hour >= r.end_hour || h < r.end_hour || h >= until) return null;
+    if (!(r.days ?? [0, 1, 2, 3, 4, 5, 6]).includes(t.getDay())) return null;
+    const occDate = ymd(t);
+    const v = store.get(occDate)[doneKey(memberId, r.id)];
+    // 済んだものは消す。ただし今チェックしたものは、触っている最中に消えると押し間違えるので、
+    // 最後に触ってから30秒は残す（前に済ませたものまで戻ってこないよう、チェックから2分以内に限る）
+    const recent = typeof v === 'number' && Date.now() - v < 120e3 && Date.now() - lastTouch < 30e3;
+    if (v && !recent) return null;
+    const end = new Date(t);
+    end.setHours(until, 0, 0, 0);
+    return { occDate, endsAt: end, carry: true };
+  }
+
   function activeTasks(t, memberId) {
     const mine = (r) => assignees(r).includes(memberId);
-    const routines = data.routines.filter(mine).map((r) => ({ r, occ: occurrence(r, t) }));
+    const routines = data.routines.filter(mine)
+      .map((r) => ({ r, occ: occurrence(r, t) ?? carryOccurrence(r, t, memberId) }));
     const todos = (data.todos ?? []).filter(mine).map((r) => ({ r, occ: todoOccurrence(r, t) }));
     return [...todos, ...routines]
       .filter((x) => x.occ)
@@ -222,8 +244,7 @@
     // 試し表示：時間帯（おきたら／でかけるまえ／かえったら／ねるまで）ごとにまとめ、2つ以上あれば小見出しを付ける
     const catOrder = Object.keys(data.categories ?? {});
     const catIdx = (r) => catOrder.indexOf(r.category); // 単発TODO（category なし）は -1 で先頭
-    const activeCats = new Set(data.routines.filter((r) => occurrence(r, t)).map((r) => r.category));
-    const grouped = UI_NEXT && activeCats.size > 1;
+    const grouped = UI_NEXT && new Set(list.map(({ r }) => r.category)).size > 1;
     if (grouped) list = [...list].sort((a, b) => catIdx(a.r) - catIdx(b.r));
     const col = el('section', 'col');
     col.dataset.member = member.id;
@@ -278,7 +299,8 @@
         collapsed = complete && !fresh && !groupOpen.has(key);
         const head = el('li', 'task-group' + (complete ? ' complete' : ''));
         head.dataset.group = key;
-        head.append(el('span', 'group-label', `${c?.icon ?? ''} ${c?.label ?? r.category}`.trim()),
+        const carry = items.some((x) => x.occ.carry);
+        head.append(el('span', 'group-label', `${c?.icon ?? ''} ${c?.label ?? r.category}${carry ? 'のこり' : ''}`.trim()),
           el('span', 'group-count', complete ? '✓ できた！' : `${n}/${items.length}`));
         ul.append(head);
       }
@@ -959,7 +981,6 @@
 
   // ---------- 新しい版の自動読み込み ----------
   // version.json の build が変わったら、URL に ?b= を付けて読み直す（URL が変わるのでキャッシュを通らない）
-  let lastTouch = 0;
   document.addEventListener('pointerdown', () => { lastTouch = Date.now(); }, true);
   async function checkUpdate() {
     if (BUILD === 'dev') return;
