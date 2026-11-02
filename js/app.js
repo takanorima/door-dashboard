@@ -259,7 +259,7 @@
       li.append(el('div', 'check', '✓'));
 
       const body = el('div', 'task-body');
-      // titles.<memberId> があればその子向けの表記（寛成は小2までの漢字）
+      // titles.<memberId> があればその子向けの表記（kid3 は小2までの漢字）
       body.append(el('div', 'task-title', (occ.prefix ?? '') + (r.titles?.[member.id] ?? r.title)));
       const meta = el('div', 'task-meta');
       const minsLeft = Math.round((occ.endsAt - t) / 60000);
@@ -284,13 +284,17 @@
    * 溢れた列だけ段階的に詰める：
    *  fit-1 … 締切・タグ行を隠す（締切が近いものは残す）
    *  fit-2 … さらに文字と余白を小さく
+   *  fit-3 … もう一段小さく
+   *  fit-4 … 名前・外出予定の行を詰める
+   *  fit-5 … やることを2列に並べる
    */
   function autoFit() {
     document.querySelectorAll('.col').forEach((col) => {
       const list = col.querySelector('.task-list');
       if (!list) return;
-      col.classList.remove('fit-1', 'fit-2', 'fit-3');
-      for (const cls of ['fit-1', 'fit-2', 'fit-3']) {
+      const levels = ['fit-1', 'fit-2', 'fit-3', 'fit-4', 'fit-5'];
+      col.classList.remove(...levels);
+      for (const cls of levels) {
         if (list.scrollHeight <= list.clientHeight + 2) break;
         col.classList.add(cls);
       }
@@ -506,9 +510,13 @@
     const k = doneKey(member, id);
     if (m[k]) delete m[k]; else m[k] = Date.now();
     store.set(occ, m);
-    if (m[k]) maybeNotifyComplete(member);
+    const finished = m[k] ? completedList(member, now()) : null;
     if (focusMember) armFocusTimer();
     render(true);
+    if (finished) {
+      celebrate(member);
+      maybeNotifyComplete(member, finished);
+    }
   });
 
   // ---------- 完了通知（ntfy） ----------
@@ -532,12 +540,15 @@
     return false;
   }
 
-  function maybeNotifyComplete(memberId) {
-    const t = now();
+  function completedList(memberId, t) {
     const list = activeTasks(t, memberId);
-    if (!list.length) return;
-    const allDone = list.every(({ r, occ }) => !!store.get(occ.occDate)[doneKey(memberId, r.id)]);
-    if (!allDone) return;
+    const allDone = list.length > 0
+      && list.every(({ r, occ }) => !!store.get(occ.occDate)[doneKey(memberId, r.id)]);
+    return allDone ? list : null;
+  }
+
+  function maybeNotifyComplete(memberId, list) {
+    const t = now();
     // 同じ日・同じ顔ぶれのリストでは1回だけ（外して付け直しても再送しない）
     const today = ymd(t);
     const sig = `${memberId}|${list.map(({ r }) => r.id).sort().join(',')}`;
@@ -551,6 +562,48 @@
     const m = (data.members ?? []).find((x) => x.id === memberId);
     const cats = [...new Set(list.map(({ r }) => data.categories?.[r.category]?.label).filter(Boolean))];
     sendNotify(`🎉 ${m?.icon ?? ''}${m?.name ?? memberId}：${cats.join('・') || 'やること'} ぜんぶ完了（${list.length}こ） ${pad(t.getHours())}:${pad(t.getMinutes())}`);
+  }
+
+  // ---------- 全部できた！エフェクト ----------
+  const CONFETTI_COLORS = ['#fde047', '#f472b6', '#22d3ee', '#a3e635', '#fb923c', '#ffffff'];
+  function celebrate(memberId) {
+    const m = (data.members ?? []).find((x) => x.id === memberId);
+    const col = document.querySelector(`.col[data-member="${memberId}"]`);
+    const rect = col?.getBoundingClientRect() ?? { left: 0, top: 0, width: innerWidth, height: innerHeight };
+    const layer = el('div', 'celebrate');
+    layer.style.setProperty('--c', m?.color || 'var(--amber)');
+
+    // 紙吹雪：列の上部から打ち上げて、重力で落とす
+    const colors = [m?.color, ...CONFETTI_COLORS].filter(Boolean);
+    const ox = rect.left + rect.width / 2;
+    const oy = rect.top + rect.height * 0.3;
+    for (let i = 0; i < 90; i++) {
+      const p = el('i', 'confetti');
+      p.style.background = colors[i % colors.length];
+      p.style.left = `${ox}px`;
+      p.style.top = `${oy}px`;
+      if (i % 3 === 0) p.style.borderRadius = '50%';
+      layer.append(p);
+      const ang = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.1;
+      const v = (0.35 + Math.random() * 0.55) * Math.min(innerWidth, innerHeight);
+      const dx = Math.cos(ang) * v;
+      const dy = Math.sin(ang) * v;
+      const fall = innerHeight * (0.6 + Math.random() * 0.5);
+      const rot = (Math.random() - 0.5) * 1440;
+      p.animate([
+        { transform: 'translate(-50%, -50%) rotate(0deg)', opacity: 1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${rot / 2}deg)`, opacity: 1, offset: 0.35 },
+        { transform: `translate(calc(-50% + ${dx * 1.3}px), calc(-50% + ${dy + fall}px)) rotate(${rot}deg)`, opacity: 0 },
+      ], { duration: 2200 + Math.random() * 1000, easing: 'cubic-bezier(.2,.7,.4,1)', fill: 'forwards' });
+    }
+
+    const msg = el('div', 'celebrate-msg');
+    msg.append(el('div', 'celebrate-big', '🎉 ぜんぶできた！'), el('div', 'celebrate-name', `${m?.icon ?? ''} ${m?.name ?? ''}`));
+    layer.append(msg);
+    document.body.append(layer);
+    col?.classList.add('just-done');
+    setTimeout(() => layer.remove(), 3400);
+    setTimeout(() => document.querySelector(`.col[data-member="${memberId}"]`)?.classList.remove('just-done'), 1800);
   }
 
   // ---------- ズーム ----------

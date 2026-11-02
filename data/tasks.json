@@ -3,21 +3,23 @@
   "members": [
     {
       "id": "kid1",
-      "name": "茶和子",
+      "name": "さわ",
       "icon": "🍵",
       "color": "#fcd34d",
-      "note": "高1"
+      "note": "高1",
+      "aliases": ["茶和子"]
     },
     {
       "id": "kid2",
-      "name": "花乃子",
+      "name": "かの",
       "icon": "🌼",
       "color": "#6ee7b7",
-      "note": "小6"
+      "note": "小6",
+      "aliases": ["花乃子"]
     },
     {
       "id": "kid3",
-      "name": "寛成",
+      "name": "かん",
       "icon": "🥫",
       "color": "#5a7ff0",
       "note": "小3",
@@ -29,7 +31,8 @@
         "予定": "よてい",
         "習い事": "ならいごと",
         "お手伝い": "お手つだい"
-      }
+      },
+      "aliases": ["寛成"]
     }
   ],
   "categories": {
@@ -347,6 +350,13 @@
       "icon": "🥋",
       "days": [6],
       "members": ["kid2", "kid3"]
+    },
+    {
+      "id": "out_atelier",
+      "title": "アトリエ",
+      "icon": "🎨",
+      "days": [4],
+      "members": ["kid3"]
     },
     {
       "id": "out_kopan_2026-11-05",

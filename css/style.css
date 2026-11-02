@@ -371,6 +371,40 @@ body.face-on .foot { padding-right: 140px; }
 }
 @keyframes pop { from { transform: translate(-50%, -50%) scale(.85); opacity: 0; } }
 
+/* ---------- 全部できた！エフェクト ---------- */
+.celebrate { position: fixed; inset: 0; z-index: 35; pointer-events: none; overflow: hidden; }
+.confetti { position: absolute; width: 14px; height: 22px; border-radius: 3px; will-change: transform, opacity; }
+.celebrate-msg {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  padding: 3vh 5vw;
+  border-radius: 28px;
+  background: rgba(0,0,0,.82);
+  border: 5px solid var(--c);
+  box-shadow: 0 0 60px var(--c);
+  animation: cheer 3.2s ease-out forwards;
+  white-space: nowrap;
+}
+.celebrate-big { font-size: clamp(40px, 8vw, 110px); font-weight: 900; color: #fff; line-height: 1.1; }
+.celebrate-name { font-size: clamp(26px, 4.4vw, 60px); font-weight: 800; color: var(--c); margin-top: 1vh; }
+@keyframes cheer {
+  0%   { transform: translate(-50%, -50%) scale(.3); opacity: 0; }
+  12%  { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  20%  { transform: translate(-50%, -50%) scale(.95); }
+  28%  { transform: translate(-50%, -50%) scale(1); }
+  80%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(.9); opacity: 0; }
+}
+.col.just-done { animation: glow 1.6s ease-out; }
+@keyframes glow {
+  0%   { box-shadow: 0 0 0 0 var(--c); }
+  30%  { box-shadow: 0 0 40px 10px var(--c); }
+  100% { box-shadow: 0 0 0 2px var(--c) inset; }
+}
+
 /* ---------- 設定モーダル ---------- */
 .modal {
   position: fixed;
@@ -448,3 +482,11 @@ body.face-on .foot { padding-right: 140px; }
 .col.fit-3 .check { width: clamp(26px, 3.8vh, 40px); height: clamp(26px, 3.8vh, 40px); font-size: 2.4vh; }
 .col.fit-3 .task { padding-top: .4vh; padding-bottom: .4vh; gap: .8vw; }
 .col.fit-3 .task-list { gap: .5vh; }
+.col.fit-4 .col-outings { margin-bottom: .3vh; gap: .4vh .4vw; }
+.col.fit-4 .outing { font-size: clamp(13px, min(1.8vw, 2.4vh), 20px); padding: .1vh .6vw; border-width: 1px; }
+.col.fit-4 .col-icon { font-size: clamp(22px, 4vh, 40px); }
+.col.fit-4 .col-name { font-size: clamp(18px, 3.6vh, 32px); }
+.col.fit-4 .progress { margin: .6vh 0 .8vh; }
+.col.fit-5 .task-list { display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: .5vh .5vw; }
+.col.fit-5 .task { gap: .5vw; padding-left: .6vw; padding-right: .6vw; }
+.col.fit-5 .task-title { font-size: clamp(13px, min(1.6vw, 2.5vh), 22px); }

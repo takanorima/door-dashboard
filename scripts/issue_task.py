@@ -5,8 +5,8 @@ GitHub Issue → data/tasks.json に反映する。
 2つの書き方に対応:
   1) Issueフォーム（.github/ISSUE_TEMPLATE/task.yml）
   2) タイトル1行のクイック入力
-       + 11/5 茶和子 体操服        … 単発TODOを追加（日付省略時は「明日」、担当省略時は全員）
-       + 明日 花乃子 寛成 集金袋
+       + 11/5 さわ 体操服          … 単発TODOを追加（日付省略時は「明日」、担当省略時は全員）
+       + 明日 かの かん 集金袋
        - 体操服                     … タイトルに「体操服」を含む項目を削除
 
 環境変数: ISSUE_TITLE, ISSUE_BODY, ISSUE_NUMBER, ISSUE_CREATED_AT, TASKS_PATH(任意)
@@ -147,7 +147,7 @@ def member_lookup(d: dict) -> dict[str, str]:
     """名前・アイコン・id → member id"""
     lut = {}
     for m in d.get("members", []):
-        for key in (m["id"], m.get("name"), m.get("icon")):
+        for key in (m["id"], m.get("name"), m.get("icon"), *m.get("aliases", [])):
             if key:
                 lut[norm(key)] = m["id"]
     return lut

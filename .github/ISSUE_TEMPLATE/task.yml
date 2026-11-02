@@ -38,9 +38,9 @@ body:
       description: 何も選ばなければ全員。※名前を変えたらここも書き換える
       options:
         - label: 全員
-        - label: 茶和子
-        - label: 花乃子
-        - label: 寛成
+        - label: さわ
+        - label: かの
+        - label: かん
 
   - type: dropdown
     id: slot
