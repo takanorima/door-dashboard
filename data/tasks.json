@@ -117,7 +117,7 @@
       "start_hour": 15,
       "end_hour": 23,
       "days": [0, 1, 2, 3, 4, 5, 6],
-      "members": ["kid3"],
+      "members": ["all"],
       "tags": ["習慣"],
       "titles": {
         "kid3": "くつをそろえる"
@@ -160,6 +160,16 @@
       "tags": ["習慣"]
     },
     {
+      "id": "home_randoseru",
+      "title": "ランドセルを定位置へ",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid2"],
+      "tags": ["習慣"]
+    },
+    {
       "id": "home_bento",
       "title": "弁当箱を出す",
       "category": "evening",
@@ -193,14 +203,30 @@
       "tags": ["習慣"]
     },
     {
-      "id": "home_randoseru",
-      "title": "ランドセルを定位置へ",
+      "id": "home_fri_wash",
+      "title": "給食袋・上履き・体操服を洗濯へ",
       "category": "evening",
       "start_hour": 15,
       "end_hour": 23,
-      "days": [1, 2, 3, 4, 5],
-      "members": ["kid2"],
-      "tags": ["習慣"]
+      "days": [5],
+      "members": ["kid2", "kid3"],
+      "tags": ["学校"],
+      "titles": {
+        "kid3": "きゅうしょくぶくろ・上ばき・たいそうふくをせんたくへ"
+      }
+    },
+    {
+      "id": "home_pool",
+      "title": "プールの洗濯物を出す",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [2],
+      "members": ["kid3"],
+      "tags": ["習い事"],
+      "titles": {
+        "kid3": "プールのせんたくものを出す"
+      }
     },
     {
       "id": "home_letter",
@@ -224,6 +250,16 @@
       "titles": {
         "kid3": "れんらくぶくろ（赤ファイル）を出す"
       }
+    },
+    {
+      "id": "home_kopan",
+      "title": "こぱんの白ファイルを出す",
+      "category": "evening",
+      "start_hour": 15,
+      "end_hour": 23,
+      "days": [3, 5],
+      "members": ["kid3"],
+      "tags": ["こぱん"]
     },
     {
       "id": "home_handout",
@@ -257,42 +293,6 @@
       "titles": {
         "kid3": "しゅくだい・音読カード"
       }
-    },
-    {
-      "id": "home_fri_wash",
-      "title": "給食袋・上履き・体操服を洗濯へ",
-      "category": "evening",
-      "start_hour": 15,
-      "end_hour": 23,
-      "days": [5],
-      "members": ["kid2", "kid3"],
-      "tags": ["学校"],
-      "titles": {
-        "kid3": "きゅうしょくぶくろ・上ばき・たいそうふくをせんたくへ"
-      }
-    },
-    {
-      "id": "home_pool",
-      "title": "プールの洗濯物を出す",
-      "category": "evening",
-      "start_hour": 15,
-      "end_hour": 23,
-      "days": [2],
-      "members": ["kid3"],
-      "tags": ["習い事"],
-      "titles": {
-        "kid3": "プールのせんたくものを出す"
-      }
-    },
-    {
-      "id": "home_kopan",
-      "title": "こぱんの白ファイルを出す",
-      "category": "evening",
-      "start_hour": 15,
-      "end_hour": 23,
-      "days": [3, 5],
-      "members": ["kid3"],
-      "tags": ["こぱん"]
     },
     {
       "id": "home_karate",
