@@ -70,7 +70,8 @@
       if (!this.available) return;
       // 画面ONやモーション検知時に即再描画（時計ずれ・天気の古さを解消）
       this.call('bind', 'screenOn', 'window.DD && window.DD.wake()');
-      this.call('bind', 'onMotion', 'window.DD && window.DD.wake()');
+      // onMotion は人が動くたびに何度も来るので、間引いてから起こす（DD.motion）
+      this.call('bind', 'onMotion', 'window.DD && window.DD.motion()');
       this.call('bind', 'onBatteryLevelChanged', 'window.DD && window.DD.refresh()');
       this.call('bind', 'pluggedAC', 'window.DD && window.DD.refresh()');
       this.call('bind', 'unplugged', 'window.DD && window.DD.refresh()');
@@ -799,8 +800,17 @@
 
   // ---------- 起動 ----------
   let lastDay = ymd(now());
+  let lastTickAt = Date.now();
   function tick() {
     const t = now();
+    // JS が止まっていた時間を記録（時計が止まる症状の切り分け用）
+    const gap = Date.now() - lastTickAt;
+    lastTickAt = Date.now();
+    if (gap > 3000 && document.visibilityState === 'visible') {
+      const scanning = window.FaceID?.isScanning?.() ? '・顔スキャン中' : '';
+      const sinceWake = lastWake ? Math.round((Date.now() - lastWake) / 1000) : -1;
+      showError('freeze', `JS停止 ${Math.round(gap / 1000)}秒（起床から${sinceWake}秒${scanning}）`);
+    }
     render();
     // 日付が変わったら古いチェック状態を掃除
     if (ymd(t) !== lastDay) { lastDay = ymd(t); store.prune(); }
@@ -816,6 +826,7 @@
   // Fully なら画面を一度消して点け直す（手動の画面OFF→ONで直る症状への自動対処）
   let paintCheckPending = false;
   let lastWake = 0;
+  let lastWeatherWake = 0;
   let lastRecover = 0;
   document.addEventListener('pointerdown', () => {
     // 画面が点いた直後（スクリーンセーバー解除のタップなど）と、復旧直後は見ない
@@ -859,7 +870,17 @@
   }
 
   window.DD = {
-    wake() { lastWake = Date.now(); loadWeather(); render(true); runFaceScan(); },
+    wake() {
+      lastWake = Date.now();
+      // 操作中は作り直さない（押した瞬間に項目が入れ替わるとタップが消える）
+      if (Date.now() - lastTouch > 10e3) render(true);
+      if (Date.now() - lastWeatherWake > 5 * 60e3) { lastWeatherWake = Date.now(); loadWeather(); }
+      runFaceScan();
+    },
+    motion() {
+      if (Date.now() - lastWake < 60e3) return;
+      window.DD.wake();
+    },
     renderDevice,
     refresh() { render(true); },
     reload: loadTasks,
