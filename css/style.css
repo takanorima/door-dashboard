@@ -200,19 +200,6 @@ body.dim .shift { filter: brightness(0.45); }
 .deadline { font-size: clamp(12px, 1.8vw, 20px); color: var(--text-dim); }
 .deadline.soon { color: var(--warn); font-weight: 700; }
 
-.tag {
-  font-size: clamp(11px, 1.6vw, 18px);
-  padding: 1px 10px;
-  border-radius: 99px;
-  border: 2px solid currentColor;
-  font-weight: 700;
-}
-.tag.danger { color: var(--danger); }
-.tag.warn   { color: var(--warn); }
-.tag.info   { color: var(--info); }
-.tag.accent { color: var(--accent); }
-.tag.muted  { color: var(--muted); }
-
 .task.done { border-color: transparent; background: transparent; }
 .task.done .check { border-color: #555; background: #555; color: #000; }
 .task.done .task-title { color: #5c6470; text-decoration: line-through; text-decoration-thickness: 3px; }
@@ -297,7 +284,6 @@ body.dim .shift { filter: brightness(0.45); }
   .task-title { font-size: 3.6vh; line-height: 1.2; }
   .task-meta { margin-top: 2px; }
   .deadline { font-size: 2.2vh; }
-  .tag { font-size: 2vh; padding: 0 8px; }
   .next { padding: .8vh 1.6vw; }
 }
 
@@ -470,7 +456,7 @@ body.face-on .foot { padding-right: 140px; }
 .enroll-msg { font-size: 24px; font-weight: 700; color: var(--cyan); margin-top: 8px; }
 
 /* ---------- 自動フィット（溢れた列だけ詰める） ---------- */
-.col.fit-1 .task-meta { display: none; }
+.col.fit-1 .task-meta { display: none; } /* 締切行を隠す */
 .col.fit-1 .task:has(.deadline.soon) .task-meta { display: flex; } /* 締切間近は残す */
 .col.fit-1 .task { min-height: 0; padding-top: .9vh; padding-bottom: .9vh; }
 .col.fit-1 .task-list { gap: .8vh; }

@@ -265,9 +265,6 @@
       const minsLeft = Math.round((occ.endsAt - t) / 60000);
       meta.append(el('span', 'deadline' + (!isDone && minsLeft <= CONFIG.deadlineSoonMin ? ' soon' : ''),
         minsLeft <= 60 ? `あと${minsLeft}分` : `〜${pad(occ.endsAt.getHours())}:00`));
-      for (const tag of r.tags ?? []) {
-        meta.append(el('span', 'tag ' + (data.tag_styles?.[tag] ?? 'muted'), member.tag_labels?.[tag] ?? tag));
-      }
       body.append(meta);
       li.append(body);
       ul.append(li);
@@ -282,7 +279,7 @@
 
   /**
    * 溢れた列だけ段階的に詰める：
-   *  fit-1 … 締切・タグ行を隠す（締切が近いものは残す）
+   *  fit-1 … 締切行を隠す（締切が近いものは残す）
    *  fit-2 … さらに文字と余白を小さく
    *  fit-3 … もう一段小さく
    *  fit-4 … 名前・外出予定の行を詰める
