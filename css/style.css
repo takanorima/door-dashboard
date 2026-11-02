@@ -168,7 +168,7 @@ body.dim .shift { filter: brightness(0.45); }
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 1vh;
   overflow-y: auto;
   flex: 1;
 }
@@ -178,20 +178,21 @@ body.dim .shift { filter: brightness(0.45); }
   display: flex;
   align-items: center;
   gap: 1.2vw;
-  padding: 1.2vh .6vw;
-  border-bottom: 1px solid var(--line);   /* カードを並べず、細い区切り線のリストにする */
-  border-radius: 10px;
+  padding: 1.2vh 1.2vw;
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  border-radius: 14px;
   cursor: pointer;
-  transition: background .2s, opacity .2s;
+  transition: background .2s, border-color .2s, opacity .2s;
 }
-.task:last-child { border-bottom-color: transparent; }
-.task.pressed { background: var(--panel-2); }
+.task:active { transform: scale(0.98); }
+.task.pressed { border-color: var(--c); }
 .check {
   flex: none;
   width: clamp(36px, 5vw, 56px);
   height: clamp(36px, 5vw, 56px);
   border-radius: 50%;
-  border: 4px solid var(--c);
+  border: 4px solid var(--text-dim);
   display: grid;
   place-items: center;
   font-size: clamp(20px, 3.4vw, 34px);
@@ -203,13 +204,12 @@ body.dim .shift { filter: brightness(0.45); }
   font-size: clamp(18px, min(3vw, 4.4vh), 36px);
   font-weight: 700;
   line-height: 1.25;
-  letter-spacing: .02em;
-  font-feature-settings: "palt";
   word-break: break-word;
 }
 
-.task.done .check { background: var(--c); color: #000; }
-.task.done .task-title { color: #5c6470; text-decoration: line-through; text-decoration-thickness: 2px; }
+.task.done { border-color: transparent; background: transparent; }
+.task.done .check { border-color: #555; background: #555; color: #000; }
+.task.done .task-title { color: #5c6470; text-decoration: line-through; text-decoration-thickness: 3px; }
 
 .empty, .all-done-msg {
   flex: 1;
@@ -284,7 +284,8 @@ body.dim .shift { filter: brightness(0.45); }
   .col-icon { font-size: 5.4vh; }
   .col-name { font-size: 4.4vh; }
   .progress { margin: .8vh 0 1vh; }
-  .task { min-height: 64px; padding: .8vh .6vw; }
+  .task-list { gap: .8vh; }
+  .task { min-height: 64px; padding: .8vh 1vw; }
   .check { width: 5.4vh; height: 5.4vh; border-width: 3px; font-size: 3.4vh; }
   .task-title { font-size: 3.6vh; line-height: 1.2; }
   .next { padding: .8vh 1.6vw; }
@@ -458,21 +459,23 @@ body.face-on .foot { padding-right: 140px; }
 
 /* ---------- 自動フィット（溢れた列だけ詰める） ---------- */
 .col.fit-1 .task { min-height: 0; padding-top: .9vh; padding-bottom: .9vh; }
+.col.fit-1 .task-list { gap: .8vh; }
 .col.fit-2 .task-title { font-size: clamp(16px, min(2.6vw, 3.4vh), 30px); }
 .col.fit-2 .check { width: clamp(30px, 4.4vh, 48px); height: clamp(30px, 4.4vh, 48px); border-width: 3px; }
 .col.fit-2 .task { padding-top: .6vh; padding-bottom: .6vh; }
+.col.fit-2 .task-list { gap: .6vh; }
 .col.fit-3 .task-title { font-size: clamp(14px, min(2.2vw, 2.9vh), 26px); line-height: 1.15; }
 .col.fit-3 .check { width: clamp(26px, 3.8vh, 40px); height: clamp(26px, 3.8vh, 40px); font-size: 2.4vh; }
 .col.fit-3 .task { padding-top: .4vh; padding-bottom: .4vh; gap: .8vw; }
+.col.fit-3 .task-list { gap: .5vh; }
 .col.fit-4 .col-outings { margin-bottom: .3vh; gap: .4vh .4vw; }
 .col.fit-4 .outing { font-size: clamp(13px, min(1.8vw, 2.4vh), 20px); padding: .1vh .6vw; border-width: 1px; }
 .col.fit-4 .col-icon { font-size: clamp(22px, 4vh, 40px); }
 .col.fit-4 .col-name { font-size: clamp(18px, 3.6vh, 32px); }
 .col.fit-4 .progress { margin: .6vh 0 .8vh; }
-/* fit-5：2列にはしない（1行が5文字になって読みにくい）。1列のまま詰める */
-.col.fit-5 .task { padding-top: .2vh; padding-bottom: .2vh; }
-.col.fit-5 .task-title { font-size: clamp(13px, min(1.9vw, 2.5vh), 24px); line-height: 1.1; }
-.col.fit-5 .check { width: clamp(22px, 3.2vh, 34px); height: clamp(22px, 3.2vh, 34px); border-width: 3px; font-size: 2vh; }
+.col.fit-5 .task-list { display: grid; grid-template-columns: 1fr 1fr; align-content: start; gap: .5vh .5vw; }
+.col.fit-5 .task { gap: .5vw; padding-left: .6vw; padding-right: .6vw; }
+.col.fit-5 .task-title { font-size: clamp(13px, min(1.6vw, 2.5vh), 22px); }
 
 .status-error { color: var(--danger); font-weight: 700; }
 .col.collapsed .col-outings { display: none; }
