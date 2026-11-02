@@ -151,7 +151,7 @@
     },
     {
       "id": "home_uniform",
-      "title": "制服をハンガーにかける",
+      "title": "制服を片づける",
       "category": "evening",
       "start_hour": 15,
       "end_hour": 23,
@@ -161,7 +161,7 @@
     },
     {
       "id": "home_bento",
-      "title": "弁当箱を流しへ",
+      "title": "弁当箱を出す",
       "category": "evening",
       "start_hour": 15,
       "end_hour": 23,
@@ -184,7 +184,7 @@
     },
     {
       "id": "home_laundry",
-      "title": "体操服を洗濯カゴへ",
+      "title": "洗濯物を出す",
       "category": "evening",
       "start_hour": 15,
       "end_hour": 23,
