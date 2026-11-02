@@ -20,7 +20,6 @@
     tasksRefreshMin: 10,      // tasks.json 再取得間隔（Git push の反映）
     weatherRefreshMin: 30,
     upcomingWindowH: 3,       // 「このあと」に出す先読み時間
-    deadlineSoonMin: 30,      // 締切まで何分で強調するか
     rainAlertPop: 50,         // 降水確率(%)がこれ以上で傘アラート
     nightStart: 23,           // 夜間減光 開始時刻
     nightEnd: 5,              //           終了時刻
@@ -265,11 +264,6 @@
       const body = el('div', 'task-body');
       // titles.<memberId> があればその子向けの表記（kid3 は小2までの漢字）
       body.append(el('div', 'task-title', (occ.prefix ?? '') + (r.titles?.[member.id] ?? r.title)));
-      const meta = el('div', 'task-meta');
-      const minsLeft = Math.round((occ.endsAt - t) / 60000);
-      meta.append(el('span', 'deadline' + (!isDone && minsLeft <= CONFIG.deadlineSoonMin ? ' soon' : ''),
-        minsLeft <= 60 ? `あと${minsLeft}分` : `〜${pad(occ.endsAt.getHours())}:00`));
-      body.append(meta);
       li.append(body);
       ul.append(li);
     }
