@@ -68,7 +68,8 @@
     init() {
       if (!this.available) return;
       // 画面ONやモーション検知時に即再描画（時計ずれ・天気の古さを解消）
-      this.call('bind', 'screenOn', 'window.DD && window.DD.wake()');
+      this.call('bind', 'screenOn', 'window.DD && window.DD.screenOn()');
+      this.call('bind', 'screenOff', 'window.DD && window.DD.log("画面OFF")');
       // onMotion は人が動くたびに何度も来るので、間引いてから起こす（DD.motion）
       this.call('bind', 'onMotion', 'window.DD && window.DD.motion()');
       this.call('bind', 'onBatteryLevelChanged', 'window.DD && window.DD.refresh()');
@@ -520,8 +521,22 @@
     console.error('[DD]', where, e);
     const box = $('status-error');
     if (box) box.textContent = msg;
+    diag(`${where}: ${e?.message ?? e}`);
   }
   window.addEventListener('error', (ev) => showError('error', ev.error ?? ev.message));
+
+  // ---------- 診断ログ（画面が止まる件の切り分け用。設定画面の一番下に出る） ----------
+  function diag(ev) {
+    const t = new Date();
+    const line = `${pad(t.getMonth() + 1)}/${pad(t.getDate())} ${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())} ${ev}`;
+    try {
+      const arr = JSON.parse(localStorage.getItem('dd:diag') || '[]');
+      arr.push(line);
+      localStorage.setItem('dd:diag', JSON.stringify(arr.slice(-60)));
+    } catch {}
+  }
+  diag(`起動 v${BUILD}${typeof window.fully !== 'undefined' ? '' : '（Fullyなし）'}`);
+  document.addEventListener('visibilitychange', () => diag(`visibility ${document.visibilityState}`));
   window.addEventListener('unhandledrejection', (ev) => showError('promise', ev.reason));
 
   // ---------- 操作 ----------
@@ -776,6 +791,7 @@
     $('ntfy-topic').value = notifyTopic();
     $('ntfy-msg').textContent = '';
     renderEnrollList();
+    try { $('diag-log').textContent = JSON.parse(localStorage.getItem('dd:diag') || '[]').reverse().join('\n') || '（なし）'; } catch {}
     $('settings').hidden = false;
   }
   $('settings-close').addEventListener('click', () => {
@@ -828,6 +844,7 @@
       const sinceWake = lastWake ? Math.round((Date.now() - lastWake) / 1000) : -1;
       showError('freeze', `JS停止 ${Math.round(gap / 1000)}秒（起床から${sinceWake}秒${scanning}）`);
     }
+    watchFrames();
     render();
     // 日付が変わったら古いチェック状態を掃除
     if (ymd(t) !== lastDay) { lastDay = ymd(t); store.prune(); }
@@ -835,6 +852,26 @@
     if (t.getHours() === CONFIG.dailyReloadHour && t.getMinutes() === 0 && t.getSeconds() < 2
         && performance.now() > 120e3) {
       location.reload();
+    }
+  }
+
+  // 毎秒1回だけ次のフレームを頼み、3秒以上来なければ記録する（触らなくても止まっているかが分かる）
+  let frameAskedAt = 0;
+  let frameStalled = false;
+  function watchFrames() {
+    if (!frameAskedAt) {
+      frameAskedAt = Date.now();
+      requestAnimationFrame(() => {
+        if (frameStalled) diag(`描画再開（${Math.round((Date.now() - frameAskedAt) / 1000)}秒ぶり）`);
+        frameAskedAt = 0;
+        frameStalled = false;
+      });
+      return;
+    }
+    const screenOn = Fully.available ? Fully.call('getScreenOn') !== false : true;
+    if (!frameStalled && Date.now() - frameAskedAt > 3000 && document.visibilityState === 'visible' && screenOn) {
+      frameStalled = true;
+      diag('フレームが3秒来ない（JSは動いている）');
     }
   }
 
@@ -846,8 +883,8 @@
   let lastWeatherWake = 0;
   let lastRecover = 0;
   document.addEventListener('pointerdown', () => {
-    // 画面が点いた直後（スクリーンセーバー解除のタップなど）と、復旧直後は見ない
-    if (paintCheckPending || Date.now() - lastWake < 5000 || Date.now() - lastRecover < 60e3) return;
+    // 復旧直後は見ない（画面ON直後も見る：止まるのはそこが多い見立て）
+    if (paintCheckPending || Date.now() - lastRecover < 60e3) return;
     paintCheckPending = true;
     let painted = false;
     requestAnimationFrame(() => { painted = true; });
@@ -858,6 +895,7 @@
       try { n = Number(localStorage.getItem('dd:stalls') || 0) + 1; localStorage.setItem('dd:stalls', String(n)); } catch {}
       showError('stall', `描画停止を検知（累計${n}回）`);
       if (Fully.available) {
+        diag('自動で画面OFF→ON');
         lastRecover = Date.now();
         Fully.screenOff();
         setTimeout(() => Fully.call('turnScreenOn'), 1200);
@@ -887,6 +925,11 @@
   }
 
   window.DD = {
+    log: diag,
+    screenOn() {
+      diag('画面ON');
+      window.DD.wake();
+    },
     wake() {
       lastWake = Date.now();
       // 操作中は作り直さない（押した瞬間に項目が入れ替わるとタップが消える）
@@ -896,6 +939,7 @@
     },
     motion() {
       if (Date.now() - lastWake < 60e3) return;
+      diag('動体検知で起床');
       window.DD.wake();
     },
     renderDevice,

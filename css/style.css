@@ -479,3 +479,9 @@ body.face-on .foot { padding-right: 140px; }
 
 .status-error { color: var(--danger); font-weight: 700; }
 .col.collapsed .col-outings { display: none; }
+
+.diag-log {
+  max-height: 40vh; overflow: auto; margin: 0;
+  padding: 12px; background: #111; border: 1px solid var(--line); border-radius: 10px;
+  font-size: 16px; line-height: 1.5; color: var(--text-dim); white-space: pre-wrap;
+}
