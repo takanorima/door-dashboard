@@ -381,6 +381,12 @@
     if (!weather) return;
     $('wx-icon').textContent = weather.icon;
     $('wx-temp').textContent = `${Math.round(weather.temp)}°`;
+    const w = wearAdvice(weather.feels);
+    $('wx-wear').hidden = !w;
+    if (w) {
+      $('wx-wear-icon').textContent = w.icon;
+      $('wx-wear-label').textContent = w.label;
+    }
     $('wx-sub').innerHTML =
       `${CONFIG.locationName} <span class="hi">${Math.round(weather.max)}°</span> / ` +
       `<span class="lo">${Math.round(weather.min)}°</span> ☔${weather.popAhead}%`;
@@ -447,6 +453,17 @@
     render(true);
   }
 
+  // 体感温度（日中の平均）→ 服装の目安。かんも読めるよう小2までの漢字で
+  function wearAdvice(feels) {
+    if (feels == null) return null;
+    if (feels >= 25) return { icon: '👕', label: '半そで' };
+    if (feels >= 19) return { icon: '👚', label: '長そで' };
+    if (feels >= 14) return { icon: '🥼', label: 'うすいうわぎ' };
+    if (feels >= 8) return { icon: '🧥', label: 'コート' };
+    if (feels >= 3) return { icon: '🧥🧣', label: 'コート・マフラー' };
+    return { icon: '🧥🧣🧤', label: 'てぶくろも' };
+  }
+
   // WMO weather code → 絵文字
   function wmoIcon(code, isDay) {
     if (code === 0) return isDay ? '☀️' : '🌙';
@@ -466,7 +483,7 @@
       + `?latitude=${CONFIG.lat}&longitude=${CONFIG.lon}`
       + '&current=temperature_2m,weather_code,is_day'
       + '&daily=temperature_2m_max,temperature_2m_min'
-      + '&hourly=precipitation_probability'
+      + '&hourly=precipitation_probability,apparent_temperature'
       + '&timezone=Asia%2FTokyo&forecast_days=2';
     try {
       const res = await fetch(url, { cache: 'no-store' });
@@ -475,7 +492,12 @@
       // 現在から12時間以内の最大降水確率
       const nowMs = now().getTime();
       let popAhead = 0;
+      const today = ymd(now());
+      const feels = [];
       j.hourly.time.forEach((ts, i) => {
+        // 服装の目安：今日の 7〜17時（外にいる時間）の体感温度の平均
+        const hh = Number(ts.slice(11, 13));
+        if (ts.startsWith(today) && hh >= 7 && hh <= 17) feels.push(j.hourly.apparent_temperature[i]);
         const ms = new Date(ts + ':00+09:00').getTime();
         if (ms >= nowMs - 3600e3 && ms <= nowMs + 12 * 3600e3) {
           popAhead = Math.max(popAhead, j.hourly.precipitation_probability[i] ?? 0);
@@ -487,6 +509,7 @@
         max: j.daily.temperature_2m_max[0],
         min: j.daily.temperature_2m_min[0],
         popAhead,
+        feels: feels.length ? feels.reduce((a, b) => a + b, 0) / feels.length : null,
       };
       renderWeather();
       render(true);

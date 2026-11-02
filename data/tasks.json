@@ -55,26 +55,92 @@
   },
   "routines": [
     {
+      "id": "morning_bento",
+      "title": "弁当・水筒",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid1"],
+      "tags": ["必須"]
+    },
+    {
       "id": "morning_bottle",
       "title": "水筒",
       "category": "morning",
       "start_hour": 5,
       "end_hour": 10,
       "days": [1, 2, 3, 4, 5],
-      "members": ["all"],
+      "members": ["kid2", "kid3"],
       "tags": ["必須"],
       "titles": {
         "kid3": "すいとう"
       }
     },
     {
-      "id": "morning_bento",
-      "title": "お弁当",
+      "id": "morning_submit",
+      "title": "提出物",
       "category": "morning",
       "start_hour": 5,
       "end_hour": 10,
       "days": [1, 2, 3, 4, 5],
       "members": ["kid1"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "morning_letter",
+      "title": "連絡帳・宿題",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid2"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "morning_redfile",
+      "title": "赤ファイル・宿題・音読カード",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid3"],
+      "tags": ["学校"],
+      "titles": {
+        "kid3": "赤ファイル・しゅくだい・音読カード"
+      }
+    },
+    {
+      "id": "morning_kopan",
+      "title": "こぱんの白ファイル",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [3, 5],
+      "members": ["kid3"],
+      "tags": ["学校"]
+    },
+    {
+      "id": "morning_mon_kit",
+      "title": "給食袋・上履き・体操服",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [1],
+      "members": ["kid2", "kid3"],
+      "tags": ["学校"],
+      "titles": {
+        "kid3": "きゅうしょくぶくろ・上ばき・たいそうふく"
+      }
+    },
+    {
+      "id": "morning_hanky",
+      "title": "ハンカチ・ティッシュ",
+      "category": "morning",
+      "start_hour": 5,
+      "end_hour": 10,
+      "days": [1, 2, 3, 4, 5],
+      "members": ["kid2", "kid3"],
       "tags": ["必須"]
     },
     {

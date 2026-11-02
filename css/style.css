@@ -76,6 +76,13 @@ body.dim .shift { filter: brightness(0.45); }
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+.wx-wear {
+  display: flex; flex-direction: column; align-items: center;
+  padding-left: 12px; border-left: 2px solid var(--line);
+}
+.wx-wear[hidden] { display: none; }
+.wx-wear-icon { font-size: clamp(32px, min(6vw, 8vh), 72px); line-height: 1; }
+.wx-wear-label { font-size: clamp(14px, 2vw, 22px); color: var(--text-dim); white-space: nowrap; }
 .wx-sub { font-size: clamp(16px, 2.6vw, 28px); color: var(--text-dim); }
 .wx-sub .hi { color: var(--danger); }
 .wx-sub .lo { color: var(--info); }
