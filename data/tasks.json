@@ -5,21 +5,21 @@
       "id": "kid1",
       "name": "茶和子",
       "icon": "🍵",
-      "color": "#a3e635",
+      "color": "#fcd34d",
       "note": "高1"
     },
     {
       "id": "kid2",
       "name": "花乃子",
       "icon": "🌼",
-      "color": "#fde047",
+      "color": "#6ee7b7",
       "note": "小6"
     },
     {
       "id": "kid3",
       "name": "寛成",
       "icon": "🥫",
-      "color": "#fb923c",
+      "color": "#5a7ff0",
       "note": "小3"
     }
   ],
