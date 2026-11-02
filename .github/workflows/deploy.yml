@@ -61,6 +61,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # 版を埋め込む：アセットURLに ?v=<commit> を付け、version.json を置く（タブレットが自動で読み直す）
+      - name: Stamp build
+        run: |
+          BUILD="${GITHUB_SHA::7}"
+          sed -i "s/?v=dev/?v=${BUILD}/g; s/name=\"build\" content=\"dev\"/name=\"build\" content=\"${BUILD}\"/" index.html
+          printf '{"build":"%s"}\n' "$BUILD" > version.json
+          grep -c "$BUILD" index.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .

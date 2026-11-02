@@ -362,7 +362,7 @@ body.face-on .foot { padding-right: 140px; }
 
 /* ---------- 全部できた！エフェクト ---------- */
 .celebrate { position: fixed; inset: 0; z-index: 35; pointer-events: none; overflow: hidden; }
-.confetti { position: absolute; width: 14px; height: 22px; border-radius: 3px; will-change: transform, opacity; }
+.confetti { position: absolute; width: 16px; height: 24px; border-radius: 3px; } /* will-change は付けない（レイヤーが増えて重い） */
 .celebrate-msg {
   position: absolute;
   left: 50%;
@@ -372,8 +372,7 @@ body.face-on .foot { padding-right: 140px; }
   padding: 3vh 5vw;
   border-radius: 28px;
   background: rgba(0,0,0,.82);
-  border: 5px solid var(--c);
-  box-shadow: 0 0 60px var(--c);
+  border: 6px solid var(--c);
   animation: cheer 3.2s ease-out forwards;
   white-space: nowrap;
 }
@@ -389,9 +388,8 @@ body.face-on .foot { padding-right: 140px; }
 }
 .col.just-done { animation: glow 1.6s ease-out; }
 @keyframes glow {
-  0%   { box-shadow: 0 0 0 0 var(--c); }
-  30%  { box-shadow: 0 0 40px 10px var(--c); }
-  100% { box-shadow: 0 0 0 2px var(--c) inset; }
+  0%, 100% { background: var(--panel); }
+  30%      { background: #1f2a1f; }
 }
 
 /* ---------- 設定モーダル ---------- */
@@ -481,3 +479,4 @@ body.face-on .foot { padding-right: 140px; }
 .col.fit-5 .task-title { font-size: clamp(13px, min(1.6vw, 2.5vh), 22px); }
 
 .status-error { color: var(--danger); font-weight: 700; }
+.col.collapsed .col-outings { display: none; }

@@ -8,7 +8,8 @@
 
   // ---------- 設定（URLパラメータで上書き可） ----------
   const params = new URLSearchParams(location.search);
-  const VERSION = '11/02-c'; // 画面右下に出す。タブレットが新しい版を読んだかの確認用
+  // デプロイ時に commit の短いハッシュが入る（ローカルでは dev）。画面右下に出す
+  const BUILD = document.querySelector('meta[name="build"]')?.content || 'dev';
 
   const CONFIG = {
     // 天気（Open-Meteo / APIキー不要）。既定は厚木市付近
@@ -390,7 +391,7 @@
       const b = Fully.battery();
       if (b != null) parts.push(`🔋${b}%${Fully.plugged() ? '⚡' : ''}`);
     }
-    parts.push(`v${VERSION}`);
+    parts.push(`v${BUILD}`);
     $('status-device').textContent = parts.join(' ');
     $('status-data').textContent = dataLoadedAt
       ? `データ更新 ${pad(dataLoadedAt.getHours())}:${pad(dataLoadedAt.getMinutes())}`
@@ -603,7 +604,7 @@
     const colors = [m?.color, ...CONFETTI_COLORS].filter(Boolean);
     const ox = rect.left + rect.width / 2;
     const oy = rect.top + rect.height * 0.3;
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 36; i++) {
       const p = el('i', 'confetti');
       p.style.background = colors[i % colors.length];
       p.style.left = `${ox}px`;
@@ -810,8 +811,55 @@
     }
   }
 
+  // ---------- 描画停止の検知（Android WebView 対策） ----------
+  // 触ったのに次のフレームが描かれなければ「描画が止まった」とみなし、
+  // Fully なら画面を一度消して点け直す（手動の画面OFF→ONで直る症状への自動対処）
+  let paintCheckPending = false;
+  let lastWake = 0;
+  let lastRecover = 0;
+  document.addEventListener('pointerdown', () => {
+    // 画面が点いた直後（スクリーンセーバー解除のタップなど）と、復旧直後は見ない
+    if (paintCheckPending || Date.now() - lastWake < 5000 || Date.now() - lastRecover < 60e3) return;
+    paintCheckPending = true;
+    let painted = false;
+    requestAnimationFrame(() => { painted = true; });
+    setTimeout(() => {
+      paintCheckPending = false;
+      if (painted || document.visibilityState !== 'visible') return;
+      let n = 0;
+      try { n = Number(localStorage.getItem('dd:stalls') || 0) + 1; localStorage.setItem('dd:stalls', String(n)); } catch {}
+      showError('stall', `描画停止を検知（累計${n}回）`);
+      if (Fully.available) {
+        lastRecover = Date.now();
+        Fully.screenOff();
+        setTimeout(() => Fully.call('turnScreenOn'), 1200);
+      }
+    }, 2000);
+  }, true);
+
+  // ---------- 新しい版の自動読み込み ----------
+  // version.json の build が変わったら、URL に ?b= を付けて読み直す（URL が変わるのでキャッシュを通らない）
+  let lastTouch = 0;
+  document.addEventListener('pointerdown', () => { lastTouch = Date.now(); }, true);
+  async function checkUpdate() {
+    if (BUILD === 'dev') return;
+    try {
+      const res = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const { build } = await res.json();
+      if (!build || build === BUILD) return;
+      // 操作中・設定中は避ける
+      if (Date.now() - lastTouch < 30e3 || !$('settings').hidden) return;
+      const u = new URL(location.href);
+      u.searchParams.set('b', build);
+      location.replace(u.toString());
+    } catch (e) {
+      console.warn('[update]', e);
+    }
+  }
+
   window.DD = {
-    wake() { loadWeather(); render(true); runFaceScan(); },
+    wake() { lastWake = Date.now(); loadWeather(); render(true); runFaceScan(); },
     renderDevice,
     refresh() { render(true); },
     reload: loadTasks,
@@ -834,6 +882,7 @@
   setInterval(loadTasks, CONFIG.tasksRefreshMin * 60e3);
   setInterval(loadWeather, CONFIG.weatherRefreshMin * 60e3);
   setInterval(burnInShift, 60e3);
+  setInterval(checkUpdate, 60e3);
   // オフライン復帰時に再取得
   window.addEventListener('online', () => { loadTasks(); loadWeather(); });
 })();
