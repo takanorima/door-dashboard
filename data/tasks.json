@@ -326,6 +326,43 @@
       }
     }
   ],
+  "outings": [
+    {
+      "id": "out_pool",
+      "title": "プール",
+      "icon": "🏊",
+      "days": [2],
+      "members": ["kid3"]
+    },
+    {
+      "id": "out_kopan",
+      "title": "こぱん",
+      "icon": "🌸",
+      "days": [3, 5],
+      "members": ["kid3"]
+    },
+    {
+      "id": "out_karate",
+      "title": "空手",
+      "icon": "🥋",
+      "days": [6],
+      "members": ["kid2", "kid3"]
+    },
+    {
+      "id": "out_kopan_2026-11-05",
+      "title": "こぱん",
+      "icon": "🌸",
+      "date": "2026-11-05",
+      "members": ["kid3"]
+    },
+    {
+      "id": "out_kopan_2026-11-12",
+      "title": "こぱん",
+      "icon": "🌸",
+      "date": "2026-11-12",
+      "members": ["kid3"]
+    }
+  ],
   "todos": [
     {
       "id": "todo_kopan_2026-11-05",

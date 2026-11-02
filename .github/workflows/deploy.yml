@@ -40,7 +40,16 @@ jobs:
               assert t['id'] not in ids, f"duplicate id {t['id']}"
               ids.add(t['id'])
               datetime.date.fromisoformat(t['date'])
-          print(f"OK: {len(d['routines'])} routines, {len(d.get('todos', []))} todos")
+          for o in d.get('outings', []):
+              for k in ('id', 'title'):
+                  assert k in o, f"outing {o.get('id')}: missing {k}"
+              assert o['id'] not in ids, f"duplicate id {o['id']}"
+              ids.add(o['id'])
+              assert ('date' in o) != ('days' in o), f"{o['id']}: days か date のどちらか一方"
+              if 'date' in o:
+                  datetime.date.fromisoformat(o['date'])
+              assert all(0 <= x <= 6 for x in o.get('days', [])), f"{o['id']}: days must be 0-6"
+          print(f"OK: {len(d['routines'])} routines, {len(d.get('todos', []))} todos, {len(d.get('outings', []))} outings")
           EOF
 
   deploy:

@@ -72,6 +72,13 @@
         <button id="face-test" class="btn">認識テスト</button>
         <button id="face-clear-all" class="btn danger">顔データを全部消す</button>
       </div>
+      <h3>完了通知</h3>
+      <p class="note">子どもが自分の列を全部チェックしたら、ntfy アプリに通知します。スマホの ntfy で同じトピック名を購読してください。トピック名はこのタブレットにだけ保存されます（推測されにくい長い名前にする）。</p>
+      <div class="row">
+        <input id="ntfy-topic" class="text-input" type="text" placeholder="トピック名 または https://…" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button id="ntfy-test" class="btn">テスト送信</button>
+      </div>
+      <div id="ntfy-msg" class="note"></div>
     </div>
   </div>
 

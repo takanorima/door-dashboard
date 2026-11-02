@@ -159,6 +159,16 @@
       .sort((a, b) => a.occ.endsAt - b.occ.endsAt);
   }
 
+  // その日の外出予定（習い事など）。days（毎週）か date（その日だけ）で指定
+  function todaysOutings(t, memberId) {
+    const today = ymd(t);
+    return (data.outings ?? [])
+      .filter((o) => assignees(o).includes(memberId))
+      .filter((o) => (o.date ? o.date === today : (o.days ?? []).includes(t.getDay())))
+      .filter((o) => !(o.except ?? []).includes(today))
+      .sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
+  }
+
   function upcomingTasks(t) {
     const out = [];
     const limit = t.getTime() + CONFIG.upcomingWindowH * 3600e3;
@@ -203,6 +213,18 @@
     col.dataset.member = member.id;
     col.style.setProperty('--c', member.color || 'var(--info)');
     if (focusMember) col.classList.add(focusMember === member.id ? 'focused' : 'collapsed');
+
+    const outs = todaysOutings(t, member.id);
+    if (outs.length) {
+      const ob = el('div', 'col-outings');
+      for (const o of outs) {
+        const chip = el('span', 'outing');
+        if (o.time) chip.append(el('span', 'outing-time', o.time));
+        chip.append(document.createTextNode(`${o.icon ?? '🚪'} ${o.titles?.[member.id] ?? o.title}`));
+        ob.append(chip);
+      }
+      col.append(ob);
+    }
 
     const head = el('div', 'col-head');
     head.append(el('span', 'col-icon', member.icon ?? '🙂'), el('span', 'col-name', member.name));
@@ -484,9 +506,52 @@
     const k = doneKey(member, id);
     if (m[k]) delete m[k]; else m[k] = Date.now();
     store.set(occ, m);
+    if (m[k]) maybeNotifyComplete(member);
     if (focusMember) armFocusTimer();
     render(true);
   });
+
+  // ---------- 完了通知（ntfy） ----------
+  // 宛先トピックは公開リポジトリに置かず、このタブレットの localStorage にだけ持つ
+  const notifyTopic = () => { try { return localStorage.getItem('dd:ntfy-topic') || ''; } catch { return ''; } };
+
+  async function sendNotify(text) {
+    const topic = notifyTopic().trim();
+    if (!topic) return false;
+    const url = /^https?:\/\//.test(topic) ? topic : `https://ntfy.sh/${encodeURIComponent(topic)}`;
+    // カスタムヘッダを付けない＝プリフライト不要の単純リクエスト
+    for (let i = 0; i < 3; i++) {
+      try {
+        const res = await fetch(url, { method: 'POST', body: text });
+        if (res.ok) return true;
+      } catch (e) {
+        console.warn('[notify]', e);
+      }
+      await new Promise((r) => setTimeout(r, 5000 * (i + 1)));
+    }
+    return false;
+  }
+
+  function maybeNotifyComplete(memberId) {
+    const t = now();
+    const list = activeTasks(t, memberId);
+    if (!list.length) return;
+    const allDone = list.every(({ r, occ }) => !!store.get(occ.occDate)[doneKey(memberId, r.id)]);
+    if (!allDone) return;
+    // 同じ日・同じ顔ぶれのリストでは1回だけ（外して付け直しても再送しない）
+    const today = ymd(t);
+    const sig = `${memberId}|${list.map(({ r }) => r.id).sort().join(',')}`;
+    let sent;
+    try { sent = JSON.parse(localStorage.getItem('dd:notified') || '{}'); } catch { sent = {}; }
+    if (sent.date !== today) sent = { date: today, keys: [] };
+    if (sent.keys.includes(sig)) return;
+    sent.keys.push(sig);
+    try { localStorage.setItem('dd:notified', JSON.stringify(sent)); } catch {}
+
+    const m = (data.members ?? []).find((x) => x.id === memberId);
+    const cats = [...new Set(list.map(({ r }) => data.categories?.[r.category]?.label).filter(Boolean))];
+    sendNotify(`🎉 ${m?.icon ?? ''}${m?.name ?? memberId}：${cats.join('・') || 'やること'} ぜんぶ完了（${list.length}こ） ${pad(t.getHours())}:${pad(t.getMinutes())}`);
+  }
 
   // ---------- ズーム ----------
   function setFocus(memberId) {
@@ -609,6 +674,8 @@
 
   function openSettings() {
     $('face-enabled').checked = faceEnabled();
+    $('ntfy-topic').value = notifyTopic();
+    $('ntfy-msg').textContent = '';
     renderEnrollList();
     $('settings').hidden = false;
   }
@@ -624,6 +691,15 @@
   $('face-test').addEventListener('click', async () => {
     $('settings').hidden = true;
     await runFaceScan({ manual: true });
+  });
+  $('ntfy-topic').addEventListener('change', (e) => {
+    try { localStorage.setItem('dd:ntfy-topic', e.target.value.trim()); } catch {}
+  });
+  $('ntfy-test').addEventListener('click', async () => {
+    try { localStorage.setItem('dd:ntfy-topic', $('ntfy-topic').value.trim()); } catch {}
+    $('ntfy-msg').textContent = '⏳ 送信中…';
+    const ok = await sendNotify(`🔔 玄関ダッシュボードからのテスト通知 ${pad(now().getHours())}:${pad(now().getMinutes())}`);
+    $('ntfy-msg').textContent = ok ? '✅ 送信しました' : '⚠️ 送れませんでした（トピック名・ネット接続を確認）';
   });
   $('face-clear-all').addEventListener('click', () => { FaceID.clearAll(); renderEnrollList(); });
 
