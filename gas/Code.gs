@@ -2,7 +2,8 @@
  * さわの夕ごはん — Google Apps Script（スプレッドシートに紐づけて使う）
  *
  * ルール
- *   - 3択：🍚一緒に食べる／🍱家で1人／🍔外食。何もしなければ「一緒に食べる」
+ *   - 🍚みんなで食べる／🍱1人で家で食べる／🍔外食。何もしなければ「みんなで食べる」
+ *   - ❓まだわからない はしめきりまでだけ選べる。しめきりで「みんなで食べる」として確定する
  *   - しめきりは2日前の16:00。過ぎてからの変更も受け付けるが、通知に ⚠️ を付けて数える
  *   - 当日の朝、玄関のタブレットで押してダメ押し確認。10時までに無ければ親に通知
  *
@@ -17,10 +18,13 @@ const DEADLINE_HOUR = 16;  //           16:00
 const CONFIRM_BY_HOUR = 10; // 当日朝の確認がこの時刻までに無ければ親に通知
 const DEFAULT_STATUS = 'together';
 const STATUS = {
-  together: { icon: '🍚', label: '一緒に食べる' },
-  alone: { icon: '🍱', label: '家で1人' },
+  together: { icon: '🍚', label: 'みんなで食べる' },
+  alone: { icon: '🍱', label: '1人で家で食べる' },
   out: { icon: '🍔', label: '外食' },
+  unknown: { icon: '❓', label: 'まだわからない', beforeDeadlineOnly: true },
 };
+// しめきりを過ぎた「まだわからない」は、何もしなかったときと同じ扱いにする
+const effective = (status, late) => (late && STATUS[status]?.beforeDeadlineOnly ? DEFAULT_STATUS : status);
 const DOW = ['日', '月', '火', '水', '木', '金', '土'];
 
 // ---------- 日付の計算（日本時間。ここは node でも動く） ----------
@@ -51,11 +55,14 @@ function summarize(log, ms) {
   const days = [];
   for (let i = 0; i < DAYS_AHEAD; i++) {
     const date = addDaysStr(today, i);
+    const late = isLate(date, ms);
+    const raw = cur[date] || DEFAULT_STATUS;
     days.push({
       date,
       label: dayLabel(date),
-      status: cur[date] || DEFAULT_STATUS,
-      late: isLate(date, ms),
+      status: effective(raw, late),
+      undecided: raw !== effective(raw, late), // 「まだわからない」のまましめきりを過ぎた
+      late,
       deadline: deadlineMs(date),
       confirmedAt: confirmed[date] || null,
     });
@@ -70,13 +77,14 @@ function decide(log, date, status, ms, confirm) {
   if (!STATUS[status]) throw new Error('status が不正: ' + status);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('date が不正: ' + date);
   if (date < ymdJst(ms)) throw new Error('過ぎた日は変えられません');
-  const prev = [...log].reverse().find((e) => e.date === date && e.kind === 'set')?.status ?? DEFAULT_STATUS;
+  const late = isLate(date, ms);
+  if (late && STATUS[status].beforeDeadlineOnly) throw new Error('しめきりを過ぎたので「まだわからない」は選べません');
+  const prev = effective([...log].reverse().find((e) => e.date === date && e.kind === 'set')?.status ?? DEFAULT_STATUS, late);
   const s = STATUS[status];
   if (prev === status) {
     if (!confirm) return null;
     return { rows: [{ date, status, at: ms, late: false, kind: 'confirm' }], text: `✅ さわ 今日の夕ごはん：${s.icon}${s.label}（朝の確認）`, high: false };
   }
-  const late = isLate(date, ms);
   const when = date === ymdJst(ms) ? '今日' : dayLabel(date);
   const rows = [{ date, status, at: ms, late, kind: 'set' }];
   if (confirm) rows.push({ date, status, at: ms, late: false, kind: 'confirm' }); // 朝にタブレットで変えた＝確認もした
@@ -183,7 +191,7 @@ function onDeadline() {
   const day = summarize(readLog_(), ms).days.find((d) => d.date === addDaysStr(ymdJst(ms), LEAD_DAYS));
   if (!day) return;
   const s = STATUS[day.status];
-  notify_(`📋 しめきり：さわ ${day.label}の夕ごはん → ${s.icon}${s.label}`, false);
+  notify_(`📋 しめきり：さわ ${day.label}の夕ごはん → ${s.icon}${s.label}${day.undecided ? '（まだわからない のまま → みんなで食べる で確定）' : ''}`, day.undecided);
 }
 
 // 10時台：今日の朝の確認が無ければ親に知らせる（状態は変えない）

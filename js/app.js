@@ -649,6 +649,7 @@
     box.append(el('div', 'dinner-ask-title', '🍽️ きょうの夕ごはん'));
     const row = el('div', 'dinner-ask-btns');
     for (const [k, s] of Object.entries(dinner.statuses)) {
+      if (s.beforeDeadlineOnly) continue; // 「まだわからない」は当日には選べない
       const b = el('button', 'dinner-btn' + (k === dn.status ? ' on' : ''));
       b.append(el('span', 'dinner-btn-icon', s.icon), el('span', 'dinner-btn-label', s.label));
       b.dataset.dinner = k;

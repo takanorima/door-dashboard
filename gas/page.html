@@ -15,7 +15,7 @@
   .date.sun { color: #f87171; } .date.sat { color: #60a5fa; }
   .tag { font-size: 12px; color: #aaa; }
   .tag.soon { color: #fcd34d; } .tag.late { color: #f87171; }
-  .btns { display: flex; gap: 6px; margin-top: 6px; }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
   button { flex: 1; font-size: 15px; padding: 12px 2px; border-radius: 10px;
            border: 2px solid #333; background: #111; color: #bbb; }
   button.on { border-color: #fcd34d; background: #3a2f0a; color: #fff; font-weight: bold; }
@@ -24,20 +24,20 @@
 </head>
 <body>
   <h1>🍵 さわの夕ごはん</h1>
-  <div class="rule">2日前の16時がしめきり。なにもしなければ「一緒に食べる」。<br>しめきりのあとでも変えられるけど、⚠️つきで通知されて回数が残る。</div>
+  <div class="rule">2日前の16時がしめきり。なにもしなければ「みんなで食べる」。<br>「まだわからない」はしめきりまで。しめきりで「みんなで食べる」になる。<br>しめきりのあとでも変えられるけど、⚠️つきで通知されて回数が残る。</div>
   <div id="msg"></div>
   <div id="list">よみこみ中…</div>
   <p id="foot" class="rule"></p>
 <script>
   let st = null;
   let busy = false;
-  const ORDER = ['together', 'alone', 'out'];
+  const ORDER = ['together', 'alone', 'out', 'unknown'];
   const $ = (id) => document.getElementById(id);
   const msg = (t) => { $('msg').textContent = t; };
   const fmt = (ms) => new Date(ms).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' });
 
   function tagOf(d) {
-    if (d.late) return ['late', 'しめきり後'];
+    if (d.late) return ['late', d.undecided ? 'しめきり後（まだわからない → みんなで食べる）' : 'しめきり後'];
     const left = d.deadline - st.now;
     if (left < 24 * 3600e3) return ['soon', `しめきり ${fmt(d.deadline)}`];
     return ['', `しめきり ${fmt(d.deadline)}`];
@@ -55,6 +55,7 @@
       const btns = document.createElement('div');
       btns.className = 'btns';
       for (const k of ORDER) {
+        if (d.late && st.statuses[k].beforeDeadlineOnly) continue;
         const b = document.createElement('button');
         b.textContent = `${st.statuses[k].icon} ${st.statuses[k].label}`;
         if (d.status === k) b.className = 'on';
