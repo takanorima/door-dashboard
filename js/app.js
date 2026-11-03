@@ -374,7 +374,6 @@
     // 傘（朝〜夕方）
     const umb = !!(weather && h >= 5 && h < 18 && weather.popAhead >= CONFIG.rainAlertPop);
     $('wx-umb').hidden = !umb;
-    if (umb) $('wx-umb-label').textContent = `かさ ${weather.popAhead}%`;
   }
 
   function renderWeather() {
