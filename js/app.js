@@ -307,7 +307,7 @@
       li.append(el('div', 'check', '✓'));
 
       const body = el('div', 'task-body');
-      // titles.<memberId> があればその子向けの表記（kid3 は小2までの漢字）
+      // titles.<memberId> があればその子向けの表記（kid3 は小3までの漢字）
       body.append(el('div', 'task-title', (occ.prefix ?? '') + (r.titles?.[member.id] ?? r.title)));
       li.append(body);
       ul.append(li);
@@ -334,11 +334,26 @@
       if (!list) return;
       const levels = ['fit-1', 'fit-2', 'fit-3', 'fit-4', 'fit-5'];
       col.classList.remove(...levels);
+      fitTitles(col);
       for (const cls of levels) {
         if (list.scrollHeight <= list.clientHeight + 2) break;
         col.classList.add(cls);
+        fitTitles(col);
       }
     });
+  }
+
+  // 少しだけはみ出して2行になるタスク名は、文字を最大2割まで小さくして1行に収める。
+  // それでも収まらない長い文はそのまま折り返す
+  function fitTitles(col) {
+    for (const t of col.querySelectorAll('.task-title')) {
+      t.style.fontSize = '';
+      const base = parseFloat(getComputedStyle(t).fontSize);
+      const oneLine = (px) => t.offsetHeight < px * 1.6;
+      if (oneLine(base)) continue;
+      const k = [0.94, 0.88, 0.82].find((x) => { t.style.fontSize = `${base * x}px`; return oneLine(base * x); });
+      if (!k) t.style.fontSize = '';
+    }
   }
   window.addEventListener('resize', () => requestAnimationFrame(autoFit));
 
@@ -390,9 +405,9 @@
       $('wx-wear-icon').textContent = w.icon;
       $('wx-wear-label').textContent = w.label;
     }
+    // 気温の右に 最高／最低 を縦に並べる（地名と降水確率は出さない。傘は「いる／いらない」で出す）
     $('wx-sub').innerHTML =
-      `${CONFIG.locationName} <span class="hi">${Math.round(weather.max)}°</span> / ` +
-      `<span class="lo">${Math.round(weather.min)}°</span> ☔${weather.popAhead}%`;
+      `<span class="hi">${Math.round(weather.max)}°</span><span class="lo">${Math.round(weather.min)}°</span>`;
   }
 
   function renderDevice() {
@@ -456,7 +471,7 @@
     render(true);
   }
 
-  // 体感温度（日中の平均）→ 服装の目安。かんも読めるよう小2までの漢字で
+  // 体感温度（日中の平均）→ 服装の目安。かんも読めるよう小3までの漢字で
   function wearAdvice(feels) {
     if (feels == null) return null;
     if (feels >= 25) return { icon: '👕', label: '半そで' };
@@ -518,7 +533,7 @@
       render(true);
     } catch (e) {
       console.warn('[weather]', e);
-      if (!weather) $('wx-sub').textContent = '天気を取得できません';
+      if (!weather) $('wx-sub').textContent = '天気×';
     }
   }
 

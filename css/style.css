@@ -97,7 +97,7 @@ body.dim .shift { filter: brightness(0.45); }
 .wx-wear-icon { font-size: clamp(32px, min(6vw, 8vh), 72px); line-height: 1; }
 .wx-wear-label { font-size: clamp(14px, 2vw, 22px); color: var(--text-dim); white-space: nowrap; }
 .wx-umb.need .wx-wear-label { color: var(--info); font-weight: 700; }
-.wx-sub { font-size: clamp(16px, 2.6vw, 28px); color: var(--text-dim); }
+.wx-sub { display: flex; flex-direction: column; font-size: clamp(16px, 2.6vw, 28px); line-height: 1.15; font-weight: 700; }
 .wx-sub .hi { color: var(--danger); }
 .wx-sub .lo { color: var(--info); }
 
@@ -210,6 +210,7 @@ body.dim .shift { filter: brightness(0.45); }
   font-size: clamp(18px, min(3vw, 4.4vh), 36px);
   font-weight: 700;
   line-height: 1.25;
+  font-feature-settings: "palt"; /* 「・」などの約物を詰めて、1行に入る文字を増やす */
   word-break: break-word;
 }
 
@@ -265,10 +266,10 @@ body.dim .shift { filter: brightness(0.45); }
   .shift { padding: 1.6vh 2.4vw; gap: 1.2vh; }
   .top { --clock-size: 13vh; }
   .date { font-size: 4.2vh; }
-  .wx-icon, .wx-temp { font-size: 7vh; line-height: 1.1; }
-  .wx-wear-icon { font-size: 5.6vh; }
-  .wx-wear-label { font-size: 2.3vh; }
-  .wx-sub { font-size: 2.8vh; line-height: 1.2; }
+  .wx-icon, .wx-temp { font-size: 11vh; line-height: 1; }
+  .wx-wear-icon { font-size: 7vh; }
+  .wx-wear-label { font-size: 2.6vh; }
+  .wx-sub { font-size: 3.6vh; }
   .now-title { font-size: 4.2vh; }
   .col { padding: 1.2vh 1.2vw; border-top-width: 6px; }
   .col-icon { font-size: 5.4vh; }

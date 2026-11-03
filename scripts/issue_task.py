@@ -34,7 +34,7 @@ TIME_SLOTS = {
 }
 
 
-# 学年別漢字配当表（小1・小2）。members の kanji_grade: 2 の子には、これ以外の漢字を使うと注意を返す
+# 学年別漢字配当表（小1・小2）。members の kanji_grade の学年までにない漢字を使うと注意を返す
 KANJI_UPTO_G2 = set(
     "一右雨円王音下火花貝学気九休玉金空月犬見五口校左三山子四糸字耳七車手十出女小上森人水正生青夕石赤千"
     "川先早草足村大男竹中虫町天田土二日入年白八百文木本名目立力林六"
@@ -43,6 +43,14 @@ KANJI_UPTO_G2 = set(
     "走多太体台地池知茶昼長鳥朝直通弟店点電刀冬当東答頭同道読内南肉馬売買麦半番父風分聞米歩母方北毎妹万"
     "明鳴毛門夜野友用曜来里理話"
 )
+# 小3（2026-11-03 本人：これから習う字でも小3までは表示してよい）
+KANJI_G3 = set(
+    "悪安暗医委意育員院飲運泳駅央横屋温化荷界開階寒感漢館岸起期客究急級宮球去橋業曲局銀区苦具君係軽血決研"
+    "県庫湖向幸港号根祭皿仕死使始指歯詩次事持式実写者主守取酒受州拾終習集住重宿所暑助昭消商章勝乗植申身神"
+    "真深進世整昔全相送想息速族他打対待代第題炭短談着注柱丁帳調追定庭笛鉄転都度投豆島湯登等動童農波配倍箱"
+    "畑発反坂板皮悲美鼻筆氷表秒病品負部服福物平返勉放味命面問役薬由油有遊予羊洋葉陽様落流旅両緑礼列練路和"
+)
+KANJI_UPTO = {2: KANJI_UPTO_G2, 3: KANJI_UPTO_G2 | KANJI_G3}
 
 
 class InputError(Exception):
@@ -207,11 +215,14 @@ def resolve_members(d: dict, names: list[str]) -> list[str]:
 
 
 def kanji_note(d, members, title) -> str:
-    """kanji_grade: 2 の子が担当に入っていて、小3以上の漢字があれば注意文を返す"""
+    """kanji_grade のある子が担当に入っていて、その学年までにない漢字があれば注意文を返す"""
     ids = {m["id"] for m in d.get("members", [])} if "all" in members else set(members)
-    kids = [m for m in d.get("members", []) if m["id"] in ids and m.get("kanji_grade") == 2]
-    hard = "".join(dict.fromkeys(c for c in title if "\u4e00" <= c <= "\u9fff" and c not in KANJI_UPTO_G2))
-    if not kids or not hard:
+    kids = [m for m in d.get("members", []) if m["id"] in ids and m.get("kanji_grade") in KANJI_UPTO]
+    if not kids:
+        return ""
+    known = KANJI_UPTO[min(m["kanji_grade"] for m in kids)]
+    hard = "".join(dict.fromkeys(c for c in title if "\u4e00" <= c <= "\u9fff" and c not in known))
+    if not hard:
         return ""
     who = "・".join(m.get("name", m["id"]) for m in kids)
     return f"\n📝 {who}には むずかしい漢字があります（{'・'.join(hard)}）。ひらがなにするなら、消して入れ直してください。"
