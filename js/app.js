@@ -19,7 +19,6 @@
     tasksUrl: 'data/tasks.json',
     tasksRefreshMin: 10,      // tasks.json 再取得間隔（Git push の反映）
     weatherRefreshMin: 30,
-    upcomingWindowH: 3,       // 「このあと」に出す先読み時間
     rainAlertPop: 50,         // 降水確率(%)がこれ以上で傘アラート
     nightStart: 23,           // 夜間減光 開始時刻
     nightEnd: 5,              //           終了時刻
@@ -206,27 +205,6 @@
       .sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
   }
 
-  function upcomingTasks(t) {
-    const out = [];
-    const limit = t.getTime() + CONFIG.upcomingWindowH * 3600e3;
-    for (const r of data.routines) {
-      for (let i = 0; i <= 1; i++) {
-        const day = addDays(t, i);
-        const st = new Date(day); st.setHours(r.start_hour, 0, 0, 0);
-        if (st > t && st.getTime() <= limit && (r.days ?? [0,1,2,3,4,5,6]).includes(st.getDay())) {
-          out.push({ r, at: st });
-        }
-      }
-    }
-    for (const td of data.todos ?? []) {
-      if (!td.date) continue;
-      const { start, early } = todoWindow(td);
-      const at = early && early > t ? early : start;
-      if (at > t && at.getTime() <= limit) out.push({ r: td, at });
-    }
-    return out.sort((a, b) => a.at - b.at);
-  }
-
   // ---------- 描画 ----------
   function renderClock(t) {
     $('clock').textContent = `${pad(t.getHours())}:${pad(t.getMinutes())}`;
@@ -379,21 +357,6 @@
     const cats = [...new Set(data.routines.filter((r) => occurrence(r, t)).map((r) => r.category))];
     const c = cats.length === 1 ? data.categories?.[cats[0]] : null;
     $('now-title').textContent = c ? `${c.icon ?? ''} ${c.label}`.trim() : 'いまやること';
-
-    // このあと（担当者アイコン付き）
-    const up = upcomingTasks(t);
-    $('next-panel').hidden = up.length === 0;
-    const nl = $('next-list');
-    nl.replaceChildren();
-    const byId = Object.fromEntries(members.map((m) => [m.id, m]));
-    for (const { r, at } of up.slice(0, 6)) {
-      const li = el('li');
-      const who = assignees(r).length === members.length ? '' :
-        assignees(r).map((id) => byId[id]?.icon ?? '').join('');
-      li.append(el('span', 'at', `${pad(at.getHours())}:00`), document.createTextNode(r.title));
-      if (who) li.append(el('span', 'who', who));
-      nl.append(li);
-    }
   }
 
   function renderAlerts(t) {

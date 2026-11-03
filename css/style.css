@@ -237,23 +237,6 @@ body.dim .shift { filter: brightness(0.45); }
 .col.complete { border-color: var(--c); box-shadow: 0 0 0 2px var(--c) inset; }
 .col.complete .col-name::after { content: " 🎉"; }
 
-/* ---------- このあと ---------- */
-.next {
-  display: flex;
-  align-items: center;
-  gap: 1.6vw;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 1.2vh 2vw;
-  overflow: hidden;
-}
-.next-label { font-size: clamp(14px, 2.2vw, 24px); color: var(--text-dim); font-weight: 700; flex: none; }
-.next-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .6vh 2vw; }
-.next-list li { font-size: clamp(14px, 2.2vw, 24px); color: var(--text-dim); }
-.next-list .at { color: var(--text); font-variant-numeric: tabular-nums; margin-right: 6px; }
-.next-list .who { margin-left: 4px; }
-
 /* ---------- Footer ---------- */
 .foot {
   display: flex;
@@ -299,7 +282,6 @@ body.dim .shift { filter: brightness(0.45); }
   .task { min-height: 64px; padding: .8vh 1vw; }
   .check { width: 5.4vh; height: 5.4vh; border-width: 3px; font-size: 3.4vh; }
   .task-title { font-size: 3.6vh; line-height: 1.2; }
-  .next { padding: .8vh 1.6vw; }
 }
 
 /* ---------- ズーム（1人フォーカス） ---------- */
