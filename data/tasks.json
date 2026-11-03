@@ -450,7 +450,7 @@
     },
     {
       "id": "night_timetree",
-      "title": "明日のタイムツリー予定更新",
+      "title": "タイムツリー更新",
       "category": "night",
       "start_hour": 19,
       "end_hour": 2,

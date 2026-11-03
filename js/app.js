@@ -34,6 +34,10 @@
     prevEveningHour: 17,      // prev_evening=true の単発TODOを前日何時から出すか
     burnInShiftPx: 6,         // 焼き付き防止の移動量
     dailyReloadHour: 3,       // 毎日この時刻にページ再読込（メモリリーク対策）
+    dinnerMember: 'kid1',     // 夕ごはんの予定（gas/）を出す子
+    dinnerRefreshMin: 5,
+    dinnerAskStart: 5,        // 当日朝の確認ボタンを出す時間帯
+    dinnerAskEnd: 10,
   };
 
   // デバッグ用：?now=2026-11-02T07:30 で時刻を固定オフセット
@@ -54,6 +58,7 @@
   let dataLoadedAt = null;
   let dataError = false;
   let weather = null;
+  let dinner = null; // gas/ の Apps Script が返す夕ごはんの予定（今日から14日分）
   let lastTouch = 0; // 最後に画面を触った時刻
   // 試し表示：区切り（おきたら等）ごとの完了。終わった直後は少し見せてから1行にたたむ
   const groupJustDone = {}; // `${member}|${category}` → 完了した時刻
@@ -252,7 +257,8 @@
     if (focusMember) col.classList.add(focusMember === member.id ? 'focused' : 'collapsed');
 
     const outs = todaysOutings(t, member.id);
-    if (outs.length) {
+    const dn = member.id === CONFIG.dinnerMember ? dinnerToday(t) : null;
+    if (outs.length || dn) {
       const ob = el('div', 'col-outings');
       for (const o of outs) {
         const chip = el('span', 'outing');
@@ -260,7 +266,14 @@
         chip.append(document.createTextNode(`${o.icon ?? '🚪'} ${o.titles?.[member.id] ?? o.title}`));
         ob.append(chip);
       }
+      if (dn) {
+        const s = dinner.statuses[dn.status];
+        ob.append(el('span', 'outing dinner-chip', `${s.icon} ${s.label}`));
+      }
       col.append(ob);
+    }
+    if (dn && !dn.confirmedAt && t.getHours() >= CONFIG.dinnerAskStart && t.getHours() < CONFIG.dinnerAskEnd) {
+      col.append(renderDinnerAsk(dn));
     }
 
     const head = el('div', 'col-head');
@@ -607,6 +620,8 @@
     if (!col) return;
     // 畳まれた列 or 列の見出しをタップ → その子にズーム（ズーム中の見出しなら解除）
     if (col.classList.contains('collapsed')) return setFocus(col.dataset.member);
+    const db = ev.target.closest('[data-dinner]');
+    if (db) return pickDinner(db.dataset.dinner, db.closest('.dinner-ask'));
     if (ev.target.closest('.col-head')) {
       return setFocus(focusMember === col.dataset.member ? null : col.dataset.member);
     }
@@ -643,6 +658,66 @@
       showError('check', e);
     }
   });
+
+  // ---------- 夕ごはんの予定（gas/ の Apps Script） ----------
+  // URL は公開リポジトリに置かず、このタブレットの localStorage にだけ持つ
+  const dinnerUrl = () => { try { return (localStorage.getItem('dd:dinner-url') || '').trim(); } catch { return ''; } };
+  const dinnerToday = (t) => dinner?.days?.find((d) => d.date === ymd(t)) ?? null;
+
+  async function loadDinner() {
+    const url = dinnerUrl();
+    if (!url) return false;
+    try {
+      const res = await fetch(`${url}?api=list&t=${Date.now()}`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!Array.isArray(json.days)) throw new Error(json.error || 'invalid');
+      dinner = json;
+      // 操作中は作り直さない（押した瞬間に項目が入れ替わるとタップが消える）
+      if (Date.now() - lastTouch > 10e3) render(true);
+      return true;
+    } catch (e) {
+      console.warn('[dinner]', e);
+      return false;
+    }
+  }
+
+  function renderDinnerAsk(dn) {
+    const box = el('div', 'dinner-ask');
+    box.append(el('div', 'dinner-ask-title', '🍽️ きょうの夕ごはん'));
+    const row = el('div', 'dinner-ask-btns');
+    for (const [k, s] of Object.entries(dinner.statuses)) {
+      const b = el('button', 'dinner-btn' + (k === dn.status ? ' on' : ''));
+      b.append(el('span', 'dinner-btn-icon', s.icon), el('span', 'dinner-btn-label', s.label));
+      b.dataset.dinner = k;
+      row.append(b);
+    }
+    box.append(row);
+    box.append(el('div', 'dinner-ask-msg', dn.late ? 'いまのままなら、光っているのを押す' : ''));
+    return box;
+  }
+
+  // 当日朝のダメ押し確認：今のままを押せば「確認」、ちがうのを押せば変更（しめきり後なので ⚠️ で通知される）
+  async function pickDinner(status, box) {
+    const dn = dinnerToday(now());
+    if (!dn || box?.classList.contains('busy')) return;
+    box?.classList.add('busy');
+    const msg = box?.querySelector('.dinner-ask-msg');
+    if (msg) msg.textContent = '⏳ 送信中…';
+    try {
+      // text/plain で送る＝プリフライトなしの単純リクエスト
+      const res = await fetch(dinnerUrl(), { method: 'POST', body: JSON.stringify({ date: dn.date, status, confirm: true }) });
+      const json = await res.json();
+      if (!Array.isArray(json.days)) throw new Error(json.error || 'invalid');
+      dinner = json;
+      const s = dinner.statuses[status];
+      toast(`${s.icon} 夕ごはん ${s.label}（たさんに送った）`, 'var(--c)');
+      render(true);
+    } catch (e) {
+      console.warn('[dinner]', e);
+      box?.classList.remove('busy');
+      if (msg) msg.textContent = '⚠️ 送れなかった。もう一度押してね';
+    }
+  }
 
   // ---------- 完了通知（ntfy） ----------
   // 宛先トピックは公開リポジトリに置かず、このタブレットの localStorage にだけ持つ
@@ -876,6 +951,8 @@
     $('face-enabled').checked = faceEnabled();
     $('ntfy-topic').value = notifyTopic();
     $('ntfy-msg').textContent = '';
+    $('dinner-url').value = dinnerUrl();
+    $('dinner-msg').textContent = '';
     renderEnrollList();
     try { $('diag-log').textContent = JSON.parse(localStorage.getItem('dd:diag') || '[]').reverse().join('\n') || '（なし）'; } catch {}
     $('settings').hidden = false;
@@ -901,6 +978,15 @@
     $('ntfy-msg').textContent = '⏳ 送信中…';
     const ok = await sendNotify(`🔔 玄関ダッシュボードからのテスト通知 ${pad(now().getHours())}:${pad(now().getMinutes())}`);
     $('ntfy-msg').textContent = ok ? '✅ 送信しました' : '⚠️ 送れませんでした（トピック名・ネット接続を確認）';
+  });
+  $('dinner-test').addEventListener('click', async () => {
+    try { localStorage.setItem('dd:dinner-url', $('dinner-url').value.trim()); } catch {}
+    $('dinner-msg').textContent = '⏳ 読み込み中…';
+    const ok = await loadDinner();
+    const d = dinnerToday(now());
+    $('dinner-msg').textContent = ok && d
+      ? `✅ 今日：${dinner.statuses[d.status].label}${d.confirmedAt ? '（朝の確認ずみ）' : ''}／今月のしめきり後の変更 ${dinner.lateCount}回`
+      : '⚠️ 読めませんでした（URL・デプロイ設定を確認）';
   });
   $('face-clear-all').addEventListener('click', () => { FaceID.clearAll(); renderEnrollList(); });
 
@@ -1026,7 +1112,7 @@
       lastWake = Date.now();
       // 操作中は作り直さない（押した瞬間に項目が入れ替わるとタップが消える）
       if (Date.now() - lastTouch > 10e3) render(true);
-      if (Date.now() - lastWeatherWake > 5 * 60e3) { lastWeatherWake = Date.now(); loadWeather(); }
+      if (Date.now() - lastWeatherWake > 5 * 60e3) { lastWeatherWake = Date.now(); loadWeather(); loadDinner(); }
       runFaceScan();
     },
     motion() {
@@ -1052,7 +1138,9 @@
   render(true);
   loadTasks();
   loadWeather();
+  loadDinner();
   setInterval(tick, 1000);
+  setInterval(loadDinner, CONFIG.dinnerRefreshMin * 60e3);
   setInterval(loadTasks, CONFIG.tasksRefreshMin * 60e3);
   setInterval(loadWeather, CONFIG.weatherRefreshMin * 60e3);
   setInterval(burnInShift, 60e3);

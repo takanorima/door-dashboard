@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  body { margin: 0; padding: 12px 12px 40px; background: #000; color: #eee;
+         font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  h1 { font-size: 20px; margin: 4px 0; }
+  .rule { font-size: 13px; color: #aaa; line-height: 1.5; }
+  #msg { position: sticky; top: 0; min-height: 22px; padding: 4px 0; background: #000; font-size: 14px; color: #6ee7b7; }
+  .day { border-top: 1px solid #333; padding: 10px 0; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .date { font-size: 18px; font-weight: bold; }
+  .date.sun { color: #f87171; } .date.sat { color: #60a5fa; }
+  .tag { font-size: 12px; color: #aaa; }
+  .tag.soon { color: #fcd34d; } .tag.late { color: #f87171; }
+  .btns { display: flex; gap: 6px; margin-top: 6px; }
+  button { flex: 1; font-size: 15px; padding: 12px 2px; border-radius: 10px;
+           border: 2px solid #333; background: #111; color: #bbb; }
+  button.on { border-color: #fcd34d; background: #3a2f0a; color: #fff; font-weight: bold; }
+  button:disabled { opacity: .5; }
+</style>
+</head>
+<body>
+  <h1>🍵 さわの夕ごはん</h1>
+  <div class="rule">2日前の16時がしめきり。なにもしなければ「一緒に食べる」。<br>しめきりのあとでも変えられるけど、⚠️つきで通知されて回数が残る。</div>
+  <div id="msg"></div>
+  <div id="list">よみこみ中…</div>
+  <p id="foot" class="rule"></p>
+<script>
+  let st = null;
+  let busy = false;
+  const ORDER = ['together', 'alone', 'out'];
+  const $ = (id) => document.getElementById(id);
+  const msg = (t) => { $('msg').textContent = t; };
+  const fmt = (ms) => new Date(ms).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' });
+
+  function tagOf(d) {
+    if (d.late) return ['late', 'しめきり後'];
+    const left = d.deadline - st.now;
+    if (left < 24 * 3600e3) return ['soon', `しめきり ${fmt(d.deadline)}`];
+    return ['', `しめきり ${fmt(d.deadline)}`];
+  }
+
+  function render() {
+    const list = $('list');
+    list.textContent = '';
+    for (const d of st.days) {
+      const box = document.createElement('div');
+      box.className = 'day';
+      const [cls, tag] = tagOf(d);
+      const dow = d.label.slice(-2, -1);
+      box.innerHTML = `<div class="head"><span class="date ${dow === '日' ? 'sun' : dow === '土' ? 'sat' : ''}">${d.label}</span><span class="tag ${cls}">${tag}</span></div>`;
+      const btns = document.createElement('div');
+      btns.className = 'btns';
+      for (const k of ORDER) {
+        const b = document.createElement('button');
+        b.textContent = `${st.statuses[k].icon} ${st.statuses[k].label}`;
+        if (d.status === k) b.className = 'on';
+        b.disabled = busy;
+        b.onclick = () => pick(d, k);
+        btns.append(b);
+      }
+      box.append(btns);
+      list.append(box);
+    }
+    $('foot').textContent = `今月のしめきり後の変更：${st.lateCount}回`;
+  }
+
+  function pick(d, k) {
+    if (busy || d.status === k) return;
+    busy = true;
+    render();
+    msg('⏳ 送信中…');
+    google.script.run
+      .withSuccessHandler((s) => { st = s; busy = false; render(); msg(`✅ ${d.label} を「${s.statuses[k].label}」にした`); })
+      .withFailureHandler((e) => { busy = false; render(); msg('⚠️ 送れなかった：' + e.message); })
+      .setDinner(d.date, k);
+  }
+
+  google.script.run
+    .withSuccessHandler((s) => { st = s; render(); })
+    .withFailureHandler((e) => msg('⚠️ よみこめなかった：' + e.message))
+    .getState();
+</script>
+</body>
+</html>

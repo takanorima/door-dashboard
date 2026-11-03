@@ -142,6 +142,17 @@ body.dim .shift { filter: brightness(0.45); }
   background: var(--panel-2);
 }
 .outing-time { color: var(--c); font-variant-numeric: tabular-nums; }
+/* さわの夕ごはん：当日朝のダメ押し確認 */
+.dinner-ask { margin: 0 0 1vh; padding: 1vh .8vw; border: 2px solid var(--c); border-radius: 12px; background: var(--panel-2); }
+.dinner-ask-title { font-size: clamp(18px, min(2.6vw, 3.4vh), 30px); font-weight: 800; margin-bottom: .6vh; }
+.dinner-ask-btns { display: flex; flex-direction: column; gap: .5vh; }
+.dinner-btn { display: flex; align-items: center; gap: .6vw; white-space: nowrap; font: inherit; font-size: clamp(16px, min(2.2vw, 3vh), 26px); font-weight: 700;
+  padding: .6vh .8vw; border-radius: 10px; border: 2px solid var(--text-dim); background: #000; color: var(--text); text-align: left; }
+.dinner-btn-icon { font-size: 1.2em; line-height: 1.2; }
+.dinner-btn.on { border-color: var(--c); color: var(--c); box-shadow: 0 0 0 2px var(--c) inset; }
+.dinner-ask.busy .dinner-btn { opacity: .5; }
+.dinner-ask-msg { font-size: clamp(13px, min(1.6vw, 2.2vh), 18px); color: var(--text-dim); margin-top: .4vh; min-height: 1em; }
+.col.collapsed .dinner-ask { display: none; }
 .col-head { display: flex; align-items: center; gap: 10px; }
 .col-icon { font-size: clamp(28px, min(5vw, 7vh), 60px); line-height: 1; }
 .col-name { font-size: clamp(22px, min(3.6vw, 5vh), 42px); font-weight: 800; color: var(--c); flex: 1; min-width: 0; }
