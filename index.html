@@ -13,7 +13,10 @@
     <header class="top">
       <div class="clock-block">
         <div id="clock" class="clock">--:--</div>
-        <div id="date" class="date">----</div>
+        <div class="clock-side">
+          <div id="date" class="date">----</div>
+          <h2 id="now-title" class="now-title">いまやること</h2>
+        </div>
       </div>
       <div id="weather" class="weather" aria-live="polite">
         <div class="weather-main">
@@ -24,8 +27,8 @@
             <span id="wx-wear-label" class="wx-wear-label"></span>
           </span>
           <span id="wx-umb" class="wx-wear wx-umb" hidden>
-            <span class="wx-wear-icon">☂️</span>
-            <span id="wx-umb-label" class="wx-wear-label">かさ</span>
+            <span id="wx-umb-icon" class="wx-wear-icon">☂️</span>
+            <span id="wx-umb-label" class="wx-wear-label">かさ いる</span>
           </span>
         </div>
         <div id="wx-sub" class="wx-sub">天気を取得中</div>
@@ -33,9 +36,6 @@
     </header>
 
 
-    <div class="now-title-row">
-      <h2 id="now-title">いまやること</h2>
-    </div>
 
     <!-- 子どもごとの列（JSで members から生成） -->
     <main id="columns" class="columns"></main>

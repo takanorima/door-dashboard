@@ -361,8 +361,7 @@
 
   // アラート欄はやめた（リストが押し下げられるため）。ゴミの日は各自のタスクにあるので出さない。
   // 傘は天気の横、バッテリー低下とデータ読み込み失敗は画面下の赤字に出す
-  function renderAlerts(t) {
-    const h = t.getHours();
+  function renderAlerts() {
     const warns = [];
     if (Fully.available) {
       const lv = Number(Fully.battery());
@@ -371,9 +370,14 @@
     if (dataError) warns.push('⚠️ タスクデータを読み込めません（前回のデータを表示中）');
     $('status-warn').textContent = warns.join('　');
 
-    // 傘（朝〜夕方）
-    const umb = !!(weather && h >= 5 && h < 18 && weather.popAhead >= CONFIG.rainAlertPop);
-    $('wx-umb').hidden = !umb;
+    // 傘：この先12時間の降水確率で「いる／いらない」（夜は翌朝の登校まで見える）
+    $('wx-umb').hidden = !weather;
+    if (weather) {
+      const need = weather.popAhead >= CONFIG.rainAlertPop;
+      $('wx-umb-icon').textContent = need ? '☂️' : '🌂';
+      $('wx-umb-label').textContent = need ? 'かさ いる' : 'かさ いらない';
+      $('wx-umb').classList.toggle('need', need);
+    }
   }
 
   function renderWeather() {

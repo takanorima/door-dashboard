@@ -52,7 +52,7 @@ body.dim .shift { filter: brightness(0.45); }
 /* ---------- Header ---------- */
 .top {
   /* ヘッダーの高さは時計1行ぶんで固定。日付・天気もこの中に収める */
-  --clock-size: clamp(64px, min(13vw, 20vh), 180px);
+  --clock-size: clamp(56px, min(11vw, 16vh), 150px);
   flex: none;
   height: calc(var(--clock-size) * 0.95);
   display: flex;
@@ -60,7 +60,8 @@ body.dim .shift { filter: brightness(0.45); }
   gap: 2vw;
   overflow: hidden;
 }
-.clock-block { display: flex; align-items: baseline; gap: 1.6vw; white-space: nowrap; }
+.clock-block { display: flex; align-items: center; gap: 1.6vw; white-space: nowrap; }
+.clock-side { display: flex; flex-direction: column; justify-content: center; gap: .4vh; }
 .clock {
   font-size: var(--clock-size);
   font-weight: 700;
@@ -95,13 +96,13 @@ body.dim .shift { filter: brightness(0.45); }
 .wx-wear[hidden] { display: none; }
 .wx-wear-icon { font-size: clamp(32px, min(6vw, 8vh), 72px); line-height: 1; }
 .wx-wear-label { font-size: clamp(14px, 2vw, 22px); color: var(--text-dim); white-space: nowrap; }
-.wx-umb .wx-wear-label { color: var(--info); font-weight: 700; }
+.wx-umb.need .wx-wear-label { color: var(--info); font-weight: 700; }
 .wx-sub { font-size: clamp(16px, 2.6vw, 28px); color: var(--text-dim); }
 .wx-sub .hi { color: var(--danger); }
 .wx-sub .lo { color: var(--info); }
 
 /* ---------- Columns (子ども別) ---------- */
-.now-title-row h2 { margin: 0; font-size: clamp(22px, 3.6vw, 40px); }
+.now-title { margin: 0; font-size: clamp(22px, 3.6vw, 40px); line-height: 1.15; }
 
 .columns {
   flex: 1;
@@ -262,13 +263,13 @@ body.dim .shift { filter: brightness(0.45); }
 /* ---------- 高さが低い横長画面（WXGA 1280×800 など）向けの詰め ---------- */
 @media (max-height: 900px) and (orientation: landscape) {
   .shift { padding: 1.6vh 2.4vw; gap: 1.2vh; }
-  .top { --clock-size: 16vh; }
+  .top { --clock-size: 13vh; }
   .date { font-size: 4.2vh; }
-  .wx-icon, .wx-temp { font-size: 8vh; line-height: 1.1; }
-  .wx-wear-icon { font-size: 6.4vh; }
-  .wx-wear-label { font-size: 2.4vh; }
-  .wx-sub { font-size: 3vh; }
-  .now-title-row h2 { font-size: 4.2vh; }
+  .wx-icon, .wx-temp { font-size: 7vh; line-height: 1.1; }
+  .wx-wear-icon { font-size: 5.6vh; }
+  .wx-wear-label { font-size: 2.3vh; }
+  .wx-sub { font-size: 2.8vh; line-height: 1.2; }
+  .now-title { font-size: 4.2vh; }
   .col { padding: 1.2vh 1.2vw; border-top-width: 6px; }
   .col-icon { font-size: 5.4vh; }
   .col-name { font-size: 4.4vh; }
