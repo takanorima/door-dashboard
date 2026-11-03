@@ -61,7 +61,7 @@ body.dim .shift { filter: brightness(0.45); }
   overflow: hidden;
 }
 .clock-block { display: flex; align-items: center; gap: 1.6vw; white-space: nowrap; }
-.clock-side { display: flex; flex-direction: column; justify-content: center; gap: .4vh; }
+.clock-side { order: -1; display: flex; flex-direction: column; justify-content: center; gap: .4vh; } /* 日付・見出しを時計の左に */
 .clock {
   font-size: var(--clock-size);
   font-weight: 700;

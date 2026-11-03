@@ -128,7 +128,7 @@
     },
     {
       "id": "morning_letter",
-      "title": "連絡帳・宿題",
+      "title": "宿題",
       "category": "morning",
       "start_hour": 7,
       "end_hour": 10,
@@ -271,8 +271,11 @@
       "start_hour": 15,
       "end_hour": 19,
       "days": [1, 2, 3, 4, 5],
-      "members": ["kid2"],
-      "tags": ["習慣"]
+      "members": ["kid2", "kid3"],
+      "tags": ["習慣"],
+      "titles": {
+        "kid3": "ランドセルをかたづける"
+      }
     },
     {
       "id": "home_bento",
@@ -334,16 +337,6 @@
       }
     },
     {
-      "id": "home_letter",
-      "title": "連絡帳・プリントを出す",
-      "category": "evening",
-      "start_hour": 15,
-      "end_hour": 19,
-      "days": [1, 2, 3, 4, 5],
-      "members": ["kid2"],
-      "tags": ["学校"]
-    },
-    {
       "id": "home_redfile",
       "title": "赤ファイルを出す",
       "category": "evening",
@@ -368,12 +361,12 @@
     },
     {
       "id": "home_handout",
-      "title": "プリント・提出物を渡す",
+      "title": "プリントを出す",
       "category": "evening",
       "start_hour": 15,
       "end_hour": 19,
       "days": [1, 2, 3, 4, 5],
-      "members": ["kid1"],
+      "members": ["kid1", "kid2"],
       "tags": ["学校"]
     },
     {
