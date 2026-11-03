@@ -359,46 +359,22 @@
     $('now-title').textContent = c ? `${c.icon ?? ''} ${c.label}`.trim() : 'いまやること';
   }
 
+  // アラート欄はやめた（リストが押し下げられるため）。ゴミの日は各自のタスクにあるので出さない。
+  // 傘は天気の横、バッテリー低下とデータ読み込み失敗は画面下の赤字に出す
   function renderAlerts(t) {
-    const box = $('alerts');
-    box.replaceChildren();
-    const add = (type, icon, text) => {
-      const d = el('div', 'alert ' + type);
-      d.append(el('span', null, icon), el('span', null, text));
-      box.append(d);
-    };
-
     const h = t.getHours();
-
-    // バッテリー低下（Fully のみ）
+    const warns = [];
     if (Fully.available) {
       const lv = Number(Fully.battery());
-      if (Number.isFinite(lv) && lv <= CONFIG.batteryWarnLevel && !Fully.plugged()) {
-        add('danger pulse', '⚠️', `バッテリー低下 (${lv}%) - 要充電`);
-      }
+      if (Number.isFinite(lv) && lv <= CONFIG.batteryWarnLevel && !Fully.plugged()) warns.push(`⚠️ バッテリー低下 ${lv}%`);
     }
+    if (dataError) warns.push('⚠️ タスクデータを読み込めません（前回のデータを表示中）');
+    $('status-warn').textContent = warns.join('　');
 
-    // ゴミ出しバッジ：当日・その朝（タスクの時間帯）のみ
-    const trashNow = data.routines.filter((r) =>
-      (r.tags ?? []).includes('ゴミ') && r.category === 'morning' && occurrence(r, t));
-    if (trashNow.length) {
-      add('warn pulse', '🗑️', `今日は ${trashNow.map((r) => r.title.replace(/出し$/, '')).join('・')} の日！`);
-    }
-
-    // 傘（朝〜夕方）：アラート欄だとリストが下に押されるので、服装の目安の右に並べる
+    // 傘（朝〜夕方）
     const umb = !!(weather && h >= 5 && h < 18 && weather.popAhead >= CONFIG.rainAlertPop);
     $('wx-umb').hidden = !umb;
     if (umb) $('wx-umb-label').textContent = `かさ ${weather.popAhead}%`;
-
-    // 夜：明日のゴミ予告
-    if (h >= 19) {
-      const tm = addDays(t, 1);
-      const trash = data.routines.filter((r) =>
-        (r.tags ?? []).includes('ゴミ') && (r.days ?? []).includes(tm.getDay()));
-      if (trash.length) add('warn', '🗑️', `明日は ${trash.map((r) => r.title.replace(/出し$/, '')).join('・')}`);
-    }
-
-    if (dataError) add('danger', '⚠️', 'タスクデータを読み込めません（前回のデータを表示中）');
   }
 
   function renderWeather() {

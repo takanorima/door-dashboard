@@ -90,25 +90,6 @@ body.dim .shift { filter: brightness(0.45); }
 .wx-sub .hi { color: var(--danger); }
 .wx-sub .lo { color: var(--info); }
 
-/* ---------- Alerts ---------- */
-.alerts { display: flex; flex-direction: column; gap: 1vh; }
-.alerts:empty { display: none; }
-.alert {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 1.4vh 2vw;
-  border-radius: var(--radius);
-  font-size: clamp(20px, 3.4vw, 36px);
-  font-weight: 700;
-  border: 3px solid;
-}
-.alert.warn   { border-color: var(--warn);   background: rgba(255,179,0,.14); color: var(--warn); }
-.alert.info   { border-color: var(--info);   background: rgba(34,211,238,.12); color: var(--info); }
-.alert.danger { border-color: var(--danger); background: rgba(248,113,113,.14); color: var(--danger); }
-.alert.pulse { animation: pulse 2s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: .55; } }
-
 /* ---------- Columns (子ども別) ---------- */
 .now-title-row h2 { margin: 0; font-size: clamp(22px, 3.6vw, 40px); }
 
@@ -275,7 +256,6 @@ body.dim .shift { filter: brightness(0.45); }
   .date { font-size: 4.2vh; margin-top: 0; }
   .wx-icon, .wx-temp { font-size: 9vh; }
   .wx-sub { font-size: 3.4vh; }
-  .alert { padding: .8vh 1.6vw; font-size: 4vh; }
   .now-title-row h2 { font-size: 4.2vh; }
   .col { padding: 1.2vh 1.2vw; border-top-width: 6px; }
   .col-icon { font-size: 5.4vh; }
