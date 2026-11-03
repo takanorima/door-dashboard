@@ -958,6 +958,13 @@
     if (!frameStalled && Date.now() - frameAskedAt > 3000 && document.visibilityState === 'visible' && screenOn) {
       frameStalled = true;
       diag('フレームが3秒来ない（JSは動いている）');
+      // 触らずに見ているだけでも時計が止まるので、画面が確実に点いているときは自動で点け直す（5分に1回まで）
+      if (Fully.call('getScreenOn') === true && Date.now() - lastRecover > 5 * 60e3) {
+        diag('自動で画面OFF→ON（定期監視）');
+        lastRecover = Date.now();
+        Fully.screenOff();
+        setTimeout(() => Fully.call('turnScreenOn'), 1200);
+      }
     }
   }
 
