@@ -861,8 +861,8 @@
   });
   clockEl.addEventListener('pointerup', cancelPress);
   clockEl.addEventListener('touchend', cancelPress);
-  // 長押しで WebView のメニューや選択状態に入らないよう、ページ全体で止める
-  document.addEventListener('contextmenu', (e) => e.preventDefault());
+  // 長押しで WebView のメニューや選択状態に入らないよう、ページ全体で止める（設定の入力欄は貼り付けできるよう除く）
+  document.addEventListener('contextmenu', (e) => { if (!e.target.closest?.('input, textarea')) e.preventDefault(); });
 
   function applyFaceUI() {
     const on = faceEnabled() && window.FaceID && FaceID.supported;
