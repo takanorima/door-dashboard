@@ -51,12 +51,18 @@ body.dim .shift { filter: brightness(0.45); }
 
 /* ---------- Header ---------- */
 .top {
+  /* ヘッダーの高さは時計1行ぶんで固定。日付・天気もこの中に収める */
+  --clock-size: clamp(64px, min(13vw, 20vh), 180px);
+  flex: none;
+  height: calc(var(--clock-size) * 0.95);
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
+  gap: 2vw;
+  overflow: hidden;
 }
+.clock-block { display: flex; align-items: baseline; gap: 1.6vw; white-space: nowrap; }
 .clock {
-  font-size: clamp(64px, min(13vw, 20vh), 180px);
+  font-size: var(--clock-size);
   font-weight: 700;
   line-height: 0.95;
   letter-spacing: -0.02em;
@@ -65,12 +71,16 @@ body.dim .shift { filter: brightness(0.45); }
 .date {
   font-size: clamp(20px, 3.4vw, 40px);
   color: var(--text-dim);
-  margin-top: 0.6vh;
 }
 .date .dow-sun { color: var(--danger); }
 .date .dow-sat { color: var(--info); }
 
-.weather { text-align: right; }
+.weather {
+  margin-left: auto;
+  height: 100%;
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-end;
+  text-align: right;
+}
 .weather-main { display: flex; align-items: center; gap: 12px; justify-content: flex-end; }
 .wx-icon { font-size: clamp(40px, min(8vw, 11vh), 96px); line-height: 1; }
 .wx-temp {
@@ -252,10 +262,12 @@ body.dim .shift { filter: brightness(0.45); }
 /* ---------- 高さが低い横長画面（WXGA 1280×800 など）向けの詰め ---------- */
 @media (max-height: 900px) and (orientation: landscape) {
   .shift { padding: 1.6vh 2.4vw; gap: 1.2vh; }
-  .clock { font-size: 16vh; }
-  .date { font-size: 4.2vh; margin-top: 0; }
-  .wx-icon, .wx-temp { font-size: 9vh; }
-  .wx-sub { font-size: 3.4vh; }
+  .top { --clock-size: 16vh; }
+  .date { font-size: 4.2vh; }
+  .wx-icon, .wx-temp { font-size: 8vh; line-height: 1.1; }
+  .wx-wear-icon { font-size: 6.4vh; }
+  .wx-wear-label { font-size: 2.4vh; }
+  .wx-sub { font-size: 3vh; }
   .now-title-row h2 { font-size: 4.2vh; }
   .col { padding: 1.2vh 1.2vw; border-top-width: 6px; }
   .col-icon { font-size: 5.4vh; }
