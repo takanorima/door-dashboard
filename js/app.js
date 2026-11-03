@@ -385,10 +385,10 @@
       add('warn pulse', '🗑️', `今日は ${trashNow.map((r) => r.title.replace(/出し$/, '')).join('・')} の日！`);
     }
 
-    // 傘アラート（朝〜夕方）
-    if (weather && h >= 5 && h < 18 && weather.popAhead >= CONFIG.rainAlertPop) {
-      add('info', '☂️', `傘を持って！ 降水確率 ${weather.popAhead}%`);
-    }
+    // 傘（朝〜夕方）：アラート欄だとリストが下に押されるので、服装の目安の右に並べる
+    const umb = !!(weather && h >= 5 && h < 18 && weather.popAhead >= CONFIG.rainAlertPop);
+    $('wx-umb').hidden = !umb;
+    if (umb) $('wx-umb-label').textContent = `かさ ${weather.popAhead}%`;
 
     // 夜：明日のゴミ予告
     if (h >= 19) {
