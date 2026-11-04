@@ -160,6 +160,10 @@ function apply_(date, status, confirm, src) {
 // ---------- 入口 ----------
 // スマホ：URL をそのまま開くと選ぶ画面。?api=list は玄関のタブレットが読む JSON
 function doGet(e) {
+  if (e && e.parameter && e.parameter.api === 'checks') {
+    try { return json_({ checks: readChecks_(parseDates_(e.parameter.dates)) }); }
+    catch (err) { return json_({ error: String(err.message || err) }); }
+  }
   if (e && e.parameter && e.parameter.api === 'list') {
     return json_(summarize(readLog_(), Date.now()));
   }
@@ -172,6 +176,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const b = JSON.parse(e.postData.contents);
+    if (b.api === 'checks') return json_({ checks: applyChecks_(b.ops, b.dates, b.src) });
     return json_(apply_(b.date, b.status, !!b.confirm, 'tablet'));
   } catch (err) {
     return json_({ error: String(err.message || err) });
@@ -214,4 +219,76 @@ function setup() {
   }
 }
 
-if (typeof module !== 'undefined') module.exports = { summarize, decide, deadlineMs, ymdJst, addDaysStr, hourJst };
+// ---------- チェックの共有（玄関のタブレット・各自のスマホ） ----------
+// シート checks に追記だけする。日付・キーごとに最後の行が今の状態（届いた順に上書き）
+// 返す形：{ 'YYYY-MM-DD': { 'kid1:home_shoes': at, … } }。at が負なら「外した」（-時刻）
+const CHECK_HEADER = ['date', 'key', 'done', 'at', 'src', '時刻'];
+const CHECK_READ_ROWS = 1500; // 後ろから読む行数（1日100回押しても2週間分）
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const KEY_RE = /^[\w.:-]{1,80}$/;
+
+function parseDates_(s) {
+  const dates = String(s || '').split(',').filter(Boolean);
+  if (!dates.length || dates.length > 3 || !dates.every((d) => DATE_RE.test(d))) throw new Error('dates が不正: ' + s);
+  return dates;
+}
+
+// rows: [[date, key, done, at], …]（古い順）
+function foldChecks(rows, dates) {
+  const out = {};
+  for (const d of dates) out[d] = {};
+  for (const [date, key, done, at] of rows) {
+    if (!out[date]) continue;
+    out[date][key] = done === true || done === 'TRUE' ? Number(at) : -Number(at);
+  }
+  return out;
+}
+
+function checkSheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName('checks');
+  if (!sh) {
+    sh = ss.insertSheet('checks');
+    sh.getRange(1, 1, 1, CHECK_HEADER.length).setValues([CHECK_HEADER]);
+    sh.getRange('A:A').setNumberFormat('@');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function readChecks_(dates) {
+  const sh = checkSheet_();
+  const n = sh.getLastRow();
+  if (n < 2) return foldChecks([], dates);
+  const from = Math.max(2, n - CHECK_READ_ROWS + 1);
+  const rows = sh.getRange(from, 1, n - from + 1, 4).getValues().map(([date, key, done, at]) => [
+    date instanceof Date ? Utilities.formatDate(date, TZ, 'yyyy-MM-dd') : String(date), String(key), done, at,
+  ]);
+  return foldChecks(rows, dates);
+}
+
+// ops: [{date, key, done, at}]。書いたあと dates（＋ops の日付）の今の状態を返す
+function applyChecks_(ops, dates, src) {
+  ops = Array.isArray(ops) ? ops.slice(0, 100) : [];
+  for (const o of ops) {
+    if (!DATE_RE.test(o.date) || !KEY_RE.test(o.key) || !(Number(o.at) > 0)) throw new Error('op が不正: ' + JSON.stringify(o));
+  }
+  const want = [...new Set([...(Array.isArray(dates) ? dates : []), ...ops.map((o) => o.date)])].slice(0, 5);
+  if (!want.every((d) => DATE_RE.test(d))) throw new Error('dates が不正');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (ops.length) {
+      const stamp = Utilities.formatDate(new Date(), TZ, 'yyyy/MM/dd HH:mm:ss');
+      const s = String(src || '').slice(0, 20);
+      const sh = checkSheet_();
+      sh.getRange(sh.getLastRow() + 1, 1, ops.length, CHECK_HEADER.length)
+        .setValues(ops.map((o) => [o.date, o.key, !!o.done, Number(o.at), s, stamp]));
+    }
+    return readChecks_(want);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+if (typeof module !== 'undefined') module.exports = { summarize, decide, deadlineMs, ymdJst, addDaysStr, hourJst, foldChecks };

@@ -45,7 +45,7 @@
   // 試し表示：?ui=next を付けたときだけ新しい見た目にする（本番の画面を変えずに実機で確かめるため）
   const UI_NEXT = params.get('ui') === 'next';
   if (UI_NEXT) document.documentElement.classList.add('ui-next');
-  // スマホ用：?kid=kid1（または ?kid=さわ）でその子の列だけを見る。チェックは玄関のタブレットだけ（端末間で共有できないため）
+  // スマホ用：?kid=kid1（または ?kid=さわ）でその子の列だけを見る。リンクの #s=… で共有先を受け取ったらチェックもできる
   const KID_VIEW = params.get('kid');
   if (KID_VIEW) document.documentElement.classList.add('phone');
 
@@ -370,7 +370,10 @@
       : `repeat(${Math.max(members.length, 1)}, 1fr)`;
     cols.classList.toggle('focusing', !!focusMember);
     cols.replaceChildren(...members.map((m) => renderColumn(m, t)));
-    if (KID_VIEW) cols.append(el('p', 'phone-note', '✋ チェックは玄関のタブレットでしてね'));
+    if (KID_VIEW) {
+      cols.append(el('p', 'phone-note', !syncUrl() ? '✋ チェックは玄関のタブレットでしてね'
+        : syncing() ? '🔄 玄関のタブレットと同じチェック' : '⚠️ いまつながっていない（チェックはあとで送る）'));
+    }
     else requestAnimationFrame(autoFit); // スマホはスクロールできるので詰めない
 
     // 見出し：いま有効なカテゴリ名
@@ -421,6 +424,7 @@
       const b = Fully.battery();
       if (b != null) parts.push(`🔋${b}%${Fully.plugged() ? '⚡' : ''}`);
     }
+    if (syncUrl()) parts.push(syncing() ? '🔄' : '🔄×');
     parts.push(`v${BUILD}`);
     $('status-device').textContent = parts.join(' ');
     $('status-data').textContent = dataLoadedAt
@@ -587,7 +591,7 @@
   }));
 
   $('columns').addEventListener('click', (ev) => {
-    if (KID_VIEW) return; // スマホでは見るだけ
+    if (KID_VIEW && !syncUrl()) return; // 共有先を知らないスマホでは見るだけ
     const col = ev.target.closest('.col');
     if (!col) return;
     // 畳まれた列 or 列の見出しをタップ → その子にズーム（ズーム中の見出しなら解除）
@@ -595,6 +599,7 @@
     const db = ev.target.closest('[data-dinner]');
     if (db) return pickDinner(db.dataset.dinner, db.closest('.dinner-ask'));
     if (ev.target.closest('.col-head')) {
+      if (KID_VIEW) return;
       return setFocus(focusMember === col.dataset.member ? null : col.dataset.member);
     }
     // たたんだ区切りをタップ → 開く／閉じる
@@ -611,6 +616,7 @@
     const k = doneKey(member, id);
     if (m[k]) delete m[k]; else m[k] = Date.now();
     store.set(occ, m);
+    queueCheck(occ, k, !!m[k], m[k] || Date.now());
     // 先にその行だけ見た目を切り替える（描き直しが失敗・遅延しても反応が見える）
     li.classList.toggle('done', !!m[k]);
     try {
@@ -690,6 +696,114 @@
       box?.classList.remove('busy');
       if (msg) msg.textContent = '⚠️ 送れなかった。もう一度押してね';
     }
+  }
+
+  // ---------- チェックの共有（gas/ の Apps Script、シート checks） ----------
+  // 玄関のタブレットは夕ごはんと同じ URL を使う。スマホはリンクの #s=… で受け取る（公開リポジトリには置かない）
+  const gasUrl = (s) => {
+    s = (s || '').trim();
+    if (/^https:\/\/script\.google\.com\/[\w/.-]+\/exec$/.test(s)) return s;
+    if (/^[\w-]{20,}$/.test(s)) return `https://script.google.com/macros/s/${s}/exec`;
+    return '';
+  };
+  {
+    const s = gasUrl(new URLSearchParams(location.hash.slice(1)).get('s'));
+    if (s) try { localStorage.setItem('dd:sync-url', s); } catch {}
+  }
+  const syncUrl = () => { try { return gasUrl(localStorage.getItem('dd:sync-url') || localStorage.getItem('dd:dinner-url') || ''); } catch { return ''; } };
+  if (KID_VIEW && syncUrl()) document.documentElement.classList.add('phone-sync');
+
+  // まだ送れていない操作（電波がないときも押せるように、送れるまで持っておく）
+  const syncQ = {
+    get() { try { return JSON.parse(localStorage.getItem('dd:sync-q') || '[]'); } catch { return []; } },
+    set(q) { try { localStorage.setItem('dd:sync-q', JSON.stringify(q.slice(-300))); } catch {} },
+  };
+  let syncBusy = false;
+  let syncOkAt = 0;
+  let syncFailAt = 0;
+  const syncSrc = KID_VIEW ? `phone:${KID_VIEW}` : 'tablet';
+  const syncing = () => !!syncUrl() && syncOkAt >= syncFailAt;
+
+  function queueCheck(date, key, done, at) {
+    if (!syncUrl()) return;
+    syncQ.set([...syncQ.get(), { date, key, done, at }]);
+    syncChecks();
+  }
+
+  async function syncChecks() {
+    const url = syncUrl();
+    if (!url || syncBusy) return;
+    syncBusy = true;
+    const t = now();
+    const dates = [ymd(t), ymd(addDays(t, -1))]; // 夜の区切りは0時を過ぎても前の日付で持つ
+    const ops = syncQ.get();
+    const was = syncing();
+    try {
+      // POST は text/plain で送る＝プリフライトなしの単純リクエスト
+      const res = ops.length
+        ? await fetch(url, { method: 'POST', body: JSON.stringify({ api: 'checks', ops, dates, src: syncSrc }) })
+        : await fetch(`${url}?api=checks&dates=${dates.join(',')}&t=${Date.now()}`, { cache: 'no-store' });
+      const json = await res.json();
+      // 送った分は外す（送っている間に押した分は残す）。受け付けられなかった操作も、持ち続けると詰まるので捨てる
+      if (ops.length) syncQ.set(syncQ.get().slice(ops.length));
+      if (!json.checks) throw new Error(json.error || 'invalid');
+      if (!syncOkAt || syncFailAt > syncOkAt) diag('チェック共有 つながった');
+      syncOkAt = Date.now();
+      mergeChecks(json.checks);
+    } catch (e) {
+      if (syncOkAt >= syncFailAt) diag(`チェック共有 失敗 ${e.message || e}`);
+      syncFailAt = Date.now();
+      console.warn('[sync]', e);
+    } finally {
+      syncBusy = false;
+    }
+    if (was !== syncing() && Date.now() - lastTouch > 5e3) render(true); // つながった・切れたの表示を変える
+    if (syncQ.get().length && syncOkAt > syncFailAt) syncChecks();
+  }
+
+  const sameMap = (a, b) => Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((k) => a[k] === b[k]);
+
+  // 共有の状態（{日付: {キー: 時刻, 外したら負}}）に合わせる。まだ共有に無いチェックは送る
+  function mergeChecks(remoteByDate) {
+    const pend = syncQ.get();
+    const upload = [];
+    let changed = false;
+    for (const [date, remote] of Object.entries(remoteByDate)) {
+      const local = store.get(date);
+      const next = {};
+      for (const [k, at] of Object.entries(remote)) if (at > 0) next[k] = at;
+      for (const [k, at] of Object.entries(local)) {
+        if (k in remote || pend.some((o) => o.date === date && o.key === k)) continue;
+        next[k] = at;
+        upload.push({ date, key: k, done: true, at });
+      }
+      for (const o of pend) {
+        if (o.date !== date) continue;
+        if (o.done) next[o.key] = o.at; else delete next[o.key];
+      }
+      if (!sameMap(next, local)) { store.set(date, next); changed = true; }
+    }
+    if (upload.length) { syncQ.set([...syncQ.get(), ...upload]); setTimeout(syncChecks, 0); }
+    if (!changed) return;
+    // ほかの端末で全部終わったときも完了通知を出す（送るのはトピックがある玄関のタブレット。同じリストは1回だけ）
+    if (!KID_VIEW) {
+      for (const m of data.members ?? []) {
+        const list = completedList(m.id, now());
+        if (list) maybeNotifyComplete(m.id, list);
+      }
+    }
+    // 操作中は作り直さない（押した瞬間に項目が入れ替わるとタップが消える）
+    if (Date.now() - lastTouch > 5e3) render(true);
+    else setTimeout(() => render(true), 5e3);
+  }
+
+  // 設定画面から：各自のスマホで開くリンク（共有先つき）を ntfy で親のスマホに送る
+  function phoneLinks() {
+    const url = syncUrl();
+    if (!url) return [];
+    const s = url.match(/\/macros\/s\/([\w-]+)\/exec$/)?.[1] ?? encodeURIComponent(url);
+    const base = `${location.origin}${location.pathname}`;
+    return (data.members ?? []).map((m) => `${m.icon ?? ''}${m.name}：${base}?kid=${m.id}#s=${s}`);
   }
 
   // ---------- 完了通知（ntfy） ----------
@@ -964,6 +1078,13 @@
     const ok = await sendNotify(`🔔 玄関ダッシュボードからのテスト通知 ${pad(now().getHours())}:${pad(now().getMinutes())}`);
     $('ntfy-msg').textContent = ok ? '✅ 送信しました' : '⚠️ 送れませんでした（トピック名・ネット接続を確認）';
   });
+  $('sync-links').addEventListener('click', async () => {
+    const links = phoneLinks();
+    if (!links.length) { $('sync-msg').textContent = '⚠️ 先に「さわの夕ごはん」の URL を入れてください'; return; }
+    $('sync-msg').textContent = '⏳ 送信中…';
+    const ok = await sendNotify(`📱 スマホ用リンク（それぞれのスマホで開いてホーム画面に追加）\n${links.join('\n')}`);
+    $('sync-msg').textContent = ok ? '✅ ntfy に送りました' : '⚠️ 送れませんでした（完了通知のトピック名を確認）';
+  });
   $('dinner-test').addEventListener('click', async () => {
     try { localStorage.setItem('dd:dinner-url', $('dinner-url').value.trim()); } catch {}
     $('dinner-msg').textContent = '⏳ 読み込み中…';
@@ -1112,6 +1233,7 @@
       // 操作中は作り直さない（押した瞬間に項目が入れ替わるとタップが消える）
       if (Date.now() - lastTouch > 10e3) render(true);
       if (Date.now() - lastWeatherWake > 5 * 60e3) { lastWeatherWake = Date.now(); loadWeather(); loadDinner(); }
+      syncChecks();
       runFaceScan();
     },
     motion() {
@@ -1139,12 +1261,16 @@
   loadTasks();
   loadWeather();
   loadDinner();
+  syncChecks();
   setInterval(tick, 1000);
+  // ほかの端末で付けたチェックを取りに行く（スマホは開いている間だけ）
+  setInterval(() => { if (document.visibilityState === 'visible') syncChecks(); }, (KID_VIEW ? 15 : 30) * 1e3);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncChecks(); });
   setInterval(loadDinner, CONFIG.dinnerRefreshMin * 60e3);
   setInterval(loadTasks, CONFIG.tasksRefreshMin * 60e3);
   setInterval(loadWeather, CONFIG.weatherRefreshMin * 60e3);
   setInterval(burnInShift, 60e3);
   setInterval(checkUpdate, 60e3);
   // オフライン復帰時に再取得
-  window.addEventListener('online', () => { loadTasks(); loadWeather(); });
+  window.addEventListener('online', () => { loadTasks(); loadWeather(); syncChecks(); });
 })();

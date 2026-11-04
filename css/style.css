@@ -483,8 +483,10 @@ body.face-on .foot { padding-right: 140px; }
 .phone .wx-wear-icon { font-size: 28px; }
 .phone .wx-wear-label { font-size: 12px; }
 .phone .columns { grid-template-rows: 1fr auto; }
-.phone .check, .phone .progress, .phone .progress-text, .phone .screen-off { display: none; }
-.phone .task { min-height: 0; cursor: default; }
+.phone .screen-off { display: none; }
+.phone:not(.phone-sync) .check, .phone:not(.phone-sync) .progress, .phone:not(.phone-sync) .progress-text { display: none; }
+.phone .task { min-height: 0; }
+.phone:not(.phone-sync) .task { cursor: default; }
 .phone .task-title { font-size: 20px; }
 .phone-note { margin: 0; text-align: center; color: var(--text-dim); font-size: 14px; }
 .diag-log {
