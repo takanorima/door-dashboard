@@ -45,6 +45,9 @@
   // 試し表示：?ui=next を付けたときだけ新しい見た目にする（本番の画面を変えずに実機で確かめるため）
   const UI_NEXT = params.get('ui') === 'next';
   if (UI_NEXT) document.documentElement.classList.add('ui-next');
+  // スマホ用：?kid=kid1（または ?kid=さわ）でその子の列だけを見る。チェックは玄関のタブレットだけ（端末間で共有できないため）
+  const KID_VIEW = params.get('kid');
+  if (KID_VIEW) document.documentElement.classList.add('phone');
 
   const DOW = ['日', '月', '火', '水', '木', '金', '土'];
   const $ = (id) => document.getElementById(id);
@@ -358,7 +361,8 @@
   window.addEventListener('resize', () => requestAnimationFrame(autoFit));
 
   function renderTasks(t) {
-    const members = data.members ?? [];
+    const members = (data.members ?? []).filter((m) =>
+      !KID_VIEW || m.id === KID_VIEW || m.name === KID_VIEW || (m.aliases ?? []).includes(KID_VIEW));
     const cols = $('columns');
     if (focusMember && !members.some((m) => m.id === focusMember)) focusMember = null;
     cols.style.gridTemplateColumns = focusMember
@@ -366,7 +370,8 @@
       : `repeat(${Math.max(members.length, 1)}, 1fr)`;
     cols.classList.toggle('focusing', !!focusMember);
     cols.replaceChildren(...members.map((m) => renderColumn(m, t)));
-    requestAnimationFrame(autoFit);
+    if (KID_VIEW) cols.append(el('p', 'phone-note', '✋ チェックは玄関のタブレットでしてね'));
+    else requestAnimationFrame(autoFit); // スマホはスクロールできるので詰めない
 
     // 見出し：いま有効なカテゴリ名
     const cats = [...new Set(data.routines.filter((r) => occurrence(r, t)).map((r) => r.category))];
@@ -446,7 +451,16 @@
     if (isNight === nightState) return;
     nightState = isNight;
     document.body.classList.toggle('dim', isNight && !Fully.available);
-    Fully.setBrightness(isNight ? CONFIG.nightBrightness : CONFIG.dayBrightness);
+    applyBrightness();
+  }
+
+  // 明るさ・自動消灯は設定画面で決めて、このタブレットに保存する（読み込み直しても戻らない）
+  const savedNum = (k, def) => { try { const v = localStorage.getItem(k); return v == null || v === '' ? def : Number(v); } catch { return def; } };
+  const dayBrightness = () => savedNum('dd:brightness', CONFIG.dayBrightness);
+  const idleOffMin = () => savedNum('dd:idle-off-min', 5);
+  function applyBrightness() {
+    const b = dayBrightness();
+    Fully.setBrightness(nightState ? Math.min(CONFIG.nightBrightness, b) : b);
   }
 
   // ---------- データ取得 ----------
@@ -573,6 +587,7 @@
   }));
 
   $('columns').addEventListener('click', (ev) => {
+    if (KID_VIEW) return; // スマホでは見るだけ
     const col = ev.target.closest('.col');
     if (!col) return;
     // 畳まれた列 or 列の見出しをタップ → その子にズーム（ズーム中の見出しなら解除）
@@ -909,13 +924,25 @@
     $('face-enabled').checked = faceEnabled();
     $('ntfy-topic').value = notifyTopic();
     $('ntfy-msg').textContent = '';
+    $('bright').value = dayBrightness();
+    $('bright-val').textContent = dayBrightness();
+    $('idle-off').value = String(idleOffMin());
     $('dinner-url').value = dinnerUrl();
     $('dinner-msg').textContent = '';
     renderEnrollList();
     try { $('diag-log').textContent = JSON.parse(localStorage.getItem('dd:diag') || '[]').reverse().join('\n') || '（なし）'; } catch {}
     $('settings').hidden = false;
   }
+  $('bright').addEventListener('input', (e) => {
+    try { localStorage.setItem('dd:brightness', e.target.value); } catch {}
+    $('bright-val').textContent = e.target.value;
+    Fully.setBrightness(Number(e.target.value)); // 動かしながら確かめられるよう、夜でもその値で一度点ける
+  });
+  $('idle-off').addEventListener('change', (e) => {
+    try { localStorage.setItem('dd:idle-off-min', e.target.value); } catch {}
+  });
   $('settings-close').addEventListener('click', () => {
+    applyBrightness();
     $('settings').hidden = true;
     $('enroll-stage').hidden = true;
   });
@@ -975,6 +1002,7 @@
       showError('freeze', `JS停止 ${Math.round(gap / 1000)}秒（起床から${sinceWake}秒${scanning}）`);
     }
     watchFrames();
+    idleScreenOff();
     render();
     // 日付が変わったら古いチェック状態を掃除
     if (ymd(t) !== lastDay) { lastDay = ymd(t); store.prune(); }
@@ -1011,6 +1039,19 @@
       }
     }
   }
+
+  // 触られず・動きもない時間が続いたら画面を消す（点けるのは Fully の動体検知）
+  let lastMotion = 0;
+  function idleScreenOff() {
+    const min = idleOffMin();
+    if (!Fully.available || !min || !$('settings').hidden) return;
+    const idleFor = Date.now() - Math.max(lastTouch, lastMotion, lastWake, bootAt);
+    if (idleFor < min * 60e3 || Fully.call('getScreenOn') !== true) return;
+    diag(`無操作${min}分で画面OFF`);
+    lastWake = Date.now(); // 続けて何度も消しにいかないように
+    Fully.screenOff();
+  }
+  const bootAt = Date.now();
 
   // ---------- 描画停止の検知（Android WebView 対策） ----------
   // 触ったのに次のフレームが描かれなければ「描画が止まった」とみなし、
@@ -1074,6 +1115,7 @@
       runFaceScan();
     },
     motion() {
+      lastMotion = Date.now();
       if (Date.now() - lastWake < 60e3) return;
       diag('動体検知で起床');
       window.DD.wake();

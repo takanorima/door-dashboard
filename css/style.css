@@ -470,6 +470,23 @@ body.face-on .foot { padding-right: 140px; }
 .status-error { color: var(--danger); font-weight: 700; }
 .col.collapsed .col-outings { display: none; }
 
+.set-label { min-width: 12em; }
+.set-val { min-width: 3em; text-align: right; font-variant-numeric: tabular-nums; }
+.range { flex: 1; accent-color: var(--amber); }
+/* ---------- スマホ（?kid=…）：その子の列だけ。見るだけ ---------- */
+.phone .top { height: auto; flex-wrap: wrap; gap: 1vh 4vw; overflow: visible; }
+.phone .weather { height: auto; margin-left: 0; align-items: flex-start; }
+.phone .clock { display: none; }
+.phone .date, .phone .now-title { font-size: 20px; }
+.phone .wx-icon, .phone .wx-temp { font-size: 40px; }
+.phone .wx-sub { font-size: 14px; }
+.phone .wx-wear-icon { font-size: 28px; }
+.phone .wx-wear-label { font-size: 12px; }
+.phone .columns { grid-template-rows: 1fr auto; }
+.phone .check, .phone .progress, .phone .progress-text, .phone .screen-off { display: none; }
+.phone .task { min-height: 0; cursor: default; }
+.phone .task-title { font-size: 20px; }
+.phone-note { margin: 0; text-align: center; color: var(--text-dim); font-size: 14px; }
 .diag-log {
   max-height: 40vh; overflow: auto; margin: 0;
   padding: 12px; background: #111; border: 1px solid var(--line); border-radius: 10px;
