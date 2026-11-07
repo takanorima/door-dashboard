@@ -209,11 +209,16 @@
   }
 
   // ---------- 描画 ----------
+  // 変わったときだけ書く（毎秒同じ文字を書き直すと、そのたびに画面を描き直すので電池を使う）
+  let clockText = '';
+  let dateText = '';
   function renderClock(t) {
-    $('clock').textContent = `${pad(t.getHours())}:${pad(t.getMinutes())}`;
+    const c = `${pad(t.getHours())}:${pad(t.getMinutes())}`;
+    if (c !== clockText) $('clock').textContent = clockText = c;
     const d = t.getDay();
     const cls = d === 0 ? 'dow-sun' : d === 6 ? 'dow-sat' : '';
-    $('date').innerHTML = `${t.getMonth() + 1}月${t.getDate()}日 <span class="${cls}">(${DOW[d]})</span>`;
+    const html = `${t.getMonth() + 1}月${t.getDate()}日 <span class="${cls}">(${DOW[d]})</span>`;
+    if (html !== dateText) $('date').innerHTML = dateText = html;
   }
 
   function el(tag, cls, text) {
@@ -1045,6 +1050,7 @@
     $('dinner-msg').textContent = '';
     renderEnrollList();
     try { $('diag-log').textContent = JSON.parse(localStorage.getItem('dd:diag') || '[]').reverse().join('\n') || '（なし）'; } catch {}
+    try { $('power-log').textContent = JSON.parse(localStorage.getItem('dd:power') || '[]').reverse().join('\n') || '（1時間ごとに記録します）'; } catch {}
     $('settings').hidden = false;
   }
   $('bright').addEventListener('input', (e) => {
@@ -1117,16 +1123,21 @@
     // JS が止まっていた時間を記録（時計が止まる症状の切り分け用）
     const gap = Date.now() - lastTickAt;
     lastTickAt = Date.now();
-    if (gap > 3000 && document.visibilityState === 'visible') {
+    const on = screenIsOn();
+    trackPower(on);
+    if (gap > 3000 && document.visibilityState === 'visible' && on) {
       const scanning = window.FaceID?.isScanning?.() ? '・顔スキャン中' : '';
       const sinceWake = lastWake ? Math.round((Date.now() - lastWake) / 1000) : -1;
       showError('freeze', `JS停止 ${Math.round(gap / 1000)}秒（起床から${sinceWake}秒${scanning}）`);
     }
-    watchFrames();
-    idleScreenOff();
-    render();
     // 日付が変わったら古いチェック状態を掃除
     if (ymd(t) !== lastDay) { lastDay = ymd(t); store.prune(); }
+    // 画面が消えている間は描かない（点いたときに DD.wake で描き直す）
+    if (on) {
+      watchFrames();
+      idleScreenOff();
+      render();
+    }
     // 毎日決まった時刻にリロード（長時間稼働対策）
     if (t.getHours() === CONFIG.dailyReloadHour && t.getMinutes() === 0 && t.getSeconds() < 2
         && performance.now() > 120e3) {
@@ -1222,6 +1233,53 @@
     }
   }
 
+  // ---------- 省電力 ----------
+  // Fully で画面が消えているか（Fully でなければ点いている扱い）
+  // 触られた直後は点いているとみなす（getScreenOn が誤って false を返しても時計を止めないため）
+  const screenIsOn = () => !Fully.available || Fully.call('getScreenOn') !== false || Date.now() - lastTouch < 60e3;
+
+  // 定期の取得は、画面が点いていて見えているときだけ。消えていた間の分は点いたときに取り戻す
+  const polls = [];
+  function poll(fn, ms) {
+    const p = { fn, ms, at: Date.now() };
+    polls.push(p);
+    setInterval(() => {
+      if (!screenIsOn() || document.visibilityState !== 'visible') return;
+      p.at = Date.now();
+      fn();
+    }, ms);
+  }
+  function catchUpPolls() {
+    for (const p of polls) {
+      if (Date.now() - p.at < p.ms) continue;
+      p.at = Date.now();
+      p.fn();
+    }
+  }
+
+  // 電池の記録：1時間ごとに残量と、その1時間に画面が点いていた分数・起きた回数（何が電池を使っているかの切り分け用）
+  let powerOnSec = 0;
+  let powerWakes = 0;
+  let powerHour = new Date().getHours();
+  function trackPower(on) {
+    if (on) powerOnSec++;
+    const t = new Date();
+    if (t.getHours() === powerHour) return;
+    powerHour = t.getHours();
+    if (Fully.available) {
+      const b = Fully.battery();
+      const line = `${pad(t.getMonth() + 1)}/${pad(t.getDate())} ${pad(t.getHours())}:00 🔋${b ?? '?'}%${Fully.plugged() ? '⚡' : ''}`
+        + ` 画面ON ${Math.round(powerOnSec / 60)}分・起床${powerWakes}回${faceEnabled() ? '・顔認識ON' : ''}`;
+      try {
+        const arr = JSON.parse(localStorage.getItem('dd:power') || '[]');
+        arr.push(line);
+        localStorage.setItem('dd:power', JSON.stringify(arr.slice(-48)));
+      } catch {}
+    }
+    powerOnSec = 0;
+    powerWakes = 0;
+  }
+
   window.DD = {
     log: diag,
     screenOn() {
@@ -1230,6 +1288,8 @@
     },
     wake() {
       lastWake = Date.now();
+      powerWakes++;
+      catchUpPolls();
       // 操作中は作り直さない（押した瞬間に項目が入れ替わるとタップが消える）
       if (Date.now() - lastTouch > 10e3) render(true);
       if (Date.now() - lastWeatherWake > 5 * 60e3) { lastWeatherWake = Date.now(); loadWeather(); loadDinner(); }
@@ -1264,13 +1324,17 @@
   syncChecks();
   setInterval(tick, 1000);
   // ほかの端末で付けたチェックを取りに行く（スマホは開いている間だけ）
-  setInterval(() => { if (document.visibilityState === 'visible') syncChecks(); }, (KID_VIEW ? 15 : 30) * 1e3);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncChecks(); });
-  setInterval(loadDinner, CONFIG.dinnerRefreshMin * 60e3);
-  setInterval(loadTasks, CONFIG.tasksRefreshMin * 60e3);
-  setInterval(loadWeather, CONFIG.weatherRefreshMin * 60e3);
-  setInterval(burnInShift, 60e3);
-  setInterval(checkUpdate, 60e3);
+  poll(syncChecks, (KID_VIEW ? 15 : 30) * 1e3);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    syncChecks();
+    catchUpPolls();
+  });
+  poll(loadDinner, CONFIG.dinnerRefreshMin * 60e3);
+  poll(loadTasks, CONFIG.tasksRefreshMin * 60e3);
+  poll(loadWeather, CONFIG.weatherRefreshMin * 60e3);
+  poll(burnInShift, 60e3);
+  poll(checkUpdate, 60e3);
   // オフライン復帰時に再取得
   window.addEventListener('online', () => { loadTasks(); loadWeather(); syncChecks(); });
 })();
